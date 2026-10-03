@@ -1,0 +1,658 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>The Ising model</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=Public+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+
+:root{
+  --paper:#EEF2F6; --panel:#FFFFFF; --ink:#15243A; --muted:#566779; --rule:#CBD5E0; --grid:#E3E9F0;
+  --accent:#1F4FD1; --crit:#B4235A;
+  --l16:#E69F00; --l32:#56B4E9; --l64:#009E73; --l128:#CC79A7; --l256:#0B5FA5;
+  --serif:"Source Serif 4", Georgia, "Times New Roman", serif;
+  --sans:"Public Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#0E1924; --panel:#142232; --ink:#E2E9F1; --muted:#93A4B8; --rule:#2B3D52; --grid:#1B2B3D;
+    --accent:#7A9DFF; --crit:#FF6F9C;
+    --l16:#F0B43C; --l32:#6CC3F2; --l64:#2FC596; --l128:#E08FC1; --l256:#8FB8FF;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#0E1924; --panel:#142232; --ink:#E2E9F1; --muted:#93A4B8; --rule:#2B3D52; --grid:#1B2B3D;
+  --accent:#7A9DFF; --crit:#FF6F9C;
+  --l16:#F0B43C; --l32:#6CC3F2; --l64:#2FC596; --l128:#E08FC1; --l256:#8FB8FF;
+}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{
+  margin:0; color:var(--ink); font-family:var(--sans); font-size:15px; line-height:1.5;
+  background-color:var(--paper);
+  background-image:
+    linear-gradient(var(--grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+  background-size:24px 24px;
+  font-variant-numeric:tabular-nums;
+}
+.wrap{max-width:1180px; margin:0 auto; padding:28px 20px 60px}
+h1,h2,h3{font-family:var(--serif); font-weight:600; line-height:1.15; margin:0}
+h1{font-size:clamp(30px,4.6vw,48px); letter-spacing:-0.01em}
+h2{font-size:clamp(22px,2.8vw,30px); margin-bottom:8px}
+p{margin:0 0 10px}
+.lede{font-family:var(--serif); font-size:18px; line-height:1.55; max-width:68ch; margin-top:12px; color:var(--ink)}
+.prose{max-width:72ch; font-family:var(--serif); font-size:16.5px; line-height:1.6}
+section{margin-top:44px}
+sub{font-size:.72em}
+.hero{display:grid; grid-template-columns:minmax(0,1.25fr) minmax(290px,1fr); gap:28px; margin-top:26px; align-items:start}
+@media (max-width:860px){.hero{grid-template-columns:1fr}}
+.plate{background:var(--panel); border:2px solid var(--ink); padding:10px; border-radius:3px}
+#lat{width:100%; aspect-ratio:1/1; display:block; image-rendering:pixelated}
+.plate-note{font-size:13px; color:var(--muted); margin-top:8px}
+.controls{display:flex; flex-direction:column; gap:14px}
+.pbig{font-family:var(--serif); font-size:clamp(40px,6vw,64px); line-height:1; font-weight:600; letter-spacing:-0.02em}
+.pbig span{font-style:italic; font-weight:400}
+.slider-wrap{position:relative; padding-bottom:18px}
+input[type=range]{width:100%; accent-color:var(--accent); margin:0}
+.pcmark{position:absolute; top:22px; transform:translateX(-50%); font-size:12px; color:var(--crit); white-space:nowrap}
+.pcmark::before{content:""; position:absolute; left:50%; top:-6px; width:1px; height:6px; background:var(--crit)}
+.row{display:flex; gap:8px; flex-wrap:wrap; align-items:center}
+button,select{font:inherit; font-size:14px; color:var(--ink); background:var(--panel); border:1px solid var(--rule); border-radius:5px; padding:6px 11px; cursor:pointer}
+button:hover{border-color:var(--ink)}
+button.primary{background:var(--ink); color:var(--panel); border-color:var(--ink)}
+:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+fieldset{border:0; padding:0; margin:0}
+legend{font-size:13px; color:var(--muted); margin-bottom:4px}
+.seg{display:inline-flex; border:1px solid var(--rule); border-radius:5px; overflow:hidden; background:var(--panel)}
+.seg label{padding:6px 11px; font-size:14px; cursor:pointer}
+.seg input{position:absolute; opacity:0; pointer-events:none}
+.seg input:checked + span{font-weight:600; color:var(--accent)}
+.seg input:focus-visible + span{outline:2px solid var(--accent); outline-offset:2px}
+.field label.lab{font-size:13px; color:var(--muted); display:block; margin-bottom:4px}
+dl.readouts{display:grid; grid-template-columns:auto 1fr; gap:6px 16px; margin:0; padding:12px 14px; background:var(--panel); border:1px solid var(--rule); border-radius:5px}
+dl.readouts dt{color:var(--muted); font-size:14px}
+dl.readouts dd{margin:0; font-weight:600; text-align:right}
+.status{display:flex; flex-wrap:wrap; gap:10px 18px; align-items:center; margin:12px 0 4px; font-size:13.5px}
+.chip{display:inline-flex; align-items:center; gap:6px}
+.sw{width:18px; height:3px; border-radius:2px; display:inline-block}
+.bar{height:4px; background:var(--grid); border-radius:2px; overflow:hidden; flex:1 1 160px; max-width:260px}
+.bar i{display:block; height:100%; width:0; background:var(--accent)}
+.figs{display:grid; grid-template-columns:repeat(auto-fill,minmax(320px,1fr)); gap:16px; margin-top:14px}
+figure{margin:0; background:var(--panel); border:1px solid var(--rule); border-radius:5px; padding:12px 12px 10px}
+figcaption{font-size:13.5px; color:var(--muted); margin-bottom:6px}
+figcaption b{color:var(--ink); font-weight:600; font-size:14.5px; display:block}
+figure canvas{width:100%; height:240px; display:block}
+figure.sq canvas{height:auto; aspect-ratio:1/1}
+figure.wide{grid-column:1 / -1}
+.stages{display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:12px}
+@media (max-width:700px){.stages{grid-template-columns:repeat(auto-fill,minmax(120px,1fr))}}
+.stages canvas{width:100%; height:auto; aspect-ratio:1/1; display:block; border:1px solid var(--rule)}
+.stlab{display:block; font-size:12.5px; color:var(--muted); margin-top:4px}
+.fit{font-size:13.5px; margin:6px 0 0; min-height:1.4em}
+.clickable canvas{cursor:crosshair}
+.tbl{overflow-x:auto; margin-top:14px; background:var(--panel); border:1px solid var(--rule); border-radius:5px}
+table{border-collapse:collapse; width:100%; font-size:14px; min-width:640px}
+th,td{padding:8px 12px; text-align:left; border-bottom:1px solid var(--grid); vertical-align:top}
+th{font-weight:600; color:var(--muted); font-size:13px}
+td.num{text-align:right; white-space:nowrap}
+tr:last-child td{border-bottom:0}
+.good{color:var(--l64)} .warn{color:var(--crit)}
+.two{display:grid; grid-template-columns:minmax(0,1.4fr) minmax(260px,1fr); gap:20px; margin-top:14px; align-items:start}
+@media (max-width:860px){.two{grid-template-columns:1fr}}
+.two figure canvas{height:340px}
+.sl{display:grid; grid-template-columns:1fr auto; gap:2px 10px; align-items:center; margin-bottom:12px}
+.sl label{font-size:14px}
+.sl output{font-weight:600}
+.sl input{grid-column:1 / -1}
+.note{font-size:13px; color:var(--muted); max-width:80ch}
+.keyref{border-left:4px solid var(--accent); background:var(--panel); padding:12px 16px; border-radius:0 5px 5px 0; margin:12px 0 16px; max-width:80ch}
+ol.refs{max-width:80ch; padding-left:1.4em; font-size:14.5px; line-height:1.55}
+ol.refs li{margin-bottom:8px}
+footer{margin-top:48px; font-size:13px; color:var(--muted); max-width:80ch}
+
+#spin{width:100%; aspect-ratio:1/1; display:block; image-rendering:pixelated}
+#toy{width:100%; max-width:420px; aspect-ratio:1/1; display:block; cursor:pointer; touch-action:manipulation}
+.keyref{border-left:4px solid var(--accent); background:var(--panel); padding:12px 16px; border-radius:0 5px 5px 0; margin:12px 0 16px; max-width:80ch}
+ol.refs{max-width:80ch; padding-left:1.4em; font-size:14.5px; line-height:1.55}
+ol.refs li{margin-bottom:8px}
+.curve-cap{font-size:13.5px; color:var(--muted); margin:0 0 6px} .curve-cap b{color:var(--ink); display:block; font-size:14.5px}
+.eq{font-family:var(--serif); font-size:17px; background:var(--panel); border:1px solid var(--rule); border-radius:5px; padding:10px 14px; display:inline-block; margin:6px 0 10px}
+.two2{display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:20px; align-items:start; margin-top:14px}
+@media (max-width:860px){.two2{grid-template-columns:1fr}}
+.sl{display:grid; grid-template-columns:1fr auto; gap:2px 10px; align-items:center; margin-bottom:12px}
+.sl label{font-size:14px} .sl output{font-weight:600} .sl input{grid-column:1 / -1}
+.btns{display:flex; flex-wrap:wrap; gap:6px}
+.btns button{padding:4px 9px; font-size:13px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <h1>The Ising model</h1>
+  <p class="lede">Spins on a lattice point up or down, and neighbors prefer to align. That is all, yet below a critical temperature T<sub>c</sub> a magnetization appears spontaneously, without any external field. Explore the model directly, compute its thermodynamics exactly for small lattices, compare it with non-interacting spins, and measure the quantities of interest near the critical point.</p>
+  <p class="note" style="margin-top:6px">Based on lecture notes by Sang Hoon Lee for Chapter 2 (part 1), following K. Christensen and N. R. Moloney, <i>Complexity and Criticality</i> (2005). Units: k<sub>B</sub> = 1 and J = 1, so temperatures and fields are in units of J. <a href="#references" style="color:var(--accent)">References</a></p>
+</header>
+
+<div class="hero">
+  <div>
+    <div class="plate"><canvas id="spin" aria-label="Two-dimensional Ising model"></canvas></div>
+    <p class="plate-note" id="spinNote">Up spins are white and down spins are black, as in the lecture notes. Periodic boundaries.</p>
+  </div>
+  <div class="controls">
+    <div class="pbig"><span>T</span>/T<sub>c</sub> = <output id="tOut"></output></div>
+    <div class="slider-wrap">
+      <input type="range" id="tSl" min="0.3" max="4" step="0.001" aria-label="Temperature relative to the critical temperature">
+      <div class="pcmark" style="left:18.92%">T<sub>c</sub></div>
+    </div>
+    <div class="btns" aria-label="Temperature presets">
+      <button data-t="0.7">0.7</button><button data-t="0.99">0.99</button><button data-t="1">1 (T<sub>c</sub>)</button><button data-t="1.2">1.2</button><button data-t="1.5">1.5</button><button data-t="4">4</button>
+    </div>
+    <div class="sl" style="margin:4px 0 0"><label for="hSl">External field H</label><output id="hOut"></output><input type="range" id="hSl" min="-1" max="1" step="0.01" value="0"></div>
+    <div class="row" style="gap:16px">
+      <div class="field"><label class="lab" for="lSel">Lattice</label><select id="lSel"><option value="8">8 × 8</option><option value="16">16 × 16</option><option value="32">32 × 32</option><option value="64">64 × 64</option><option value="128" selected>128 × 128</option><option value="256">256 × 256</option></select></div>
+      <div class="field"><label class="lab" for="aSel">Update rule</label><select id="aSel"><option value="metro" selected>Metropolis (single spins)</option><option value="wolff">Wolff (clusters, H = 0 only)</option></select></div>
+      <div class="field"><label class="lab" for="spf">Speed</label><select id="spf"><option value="1">1 sweep per frame</option><option value="4" selected>4 sweeps per frame</option><option value="16">16 sweeps per frame</option></select></div>
+    </div>
+    <div class="row">
+      <button id="runB" class="primary">Pause</button>
+      <button id="rnd">Random start (T = ∞)</button>
+      <button id="allUp">All up</button>
+      <button id="allDn">All down</button>
+    </div>
+    <dl class="readouts">
+      <dt>Temperature T (in units of J/k<sub>B</sub>)</dt><dd id="rT">–</dd>
+      <dt>Magnetization per spin m</dt><dd id="rM">–</dd>
+      <dt>Time average of |m|</dt><dd id="rMa">–</dd>
+      <dt>Onsager’s m<sub>0</sub>(T) for an infinite lattice</dt><dd id="rM0">–</dd>
+      <dt>Energy per spin ε</dt><dd id="rE">–</dd>
+      <dt>Sweeps since the last change</dt><dd id="rSw">–</dd>
+    </dl>
+  </div>
+</div>
+<div class="figs">
+  <figure><figcaption><b>Magnetization per spin over time</b>Below T<sub>c</sub> a small lattice flips now and then between +m and −m (dashed: Onsager’s ±m<sub>0</sub>); a large one stays put.</figcaption><canvas id="tsC"></canvas></figure>
+  <figure><figcaption><b>Distribution of m over time</b>One peak at m = 0 above T<sub>c</sub>, two peaks at ±m<sub>0</sub> below it, and a broad distribution at T<sub>c</sub>.</figcaption><canvas id="hiC"></canvas></figure>
+  <figure><figcaption><b>Spin–spin correlation function g(r) of this lattice</b>g(r) = ⟨s<sub>i</sub>s<sub>i+r</sub>⟩ − ⟨|m|⟩², averaged over time along both axes. Log–log; dashed: r<sup>−(d−2+η)</sup> = r<sup>−1/4</sup>, the decay at T<sub>c</sub>.</figcaption><canvas id="gC"></canvas></figure>
+</div>
+
+<section>
+  <h2>Defining the Ising model</h2>
+  <p class="prose">Every site i of a lattice carries a spin s<sub>i</sub> = +1 or −1, like a magnetic dipole that can point only along one axis. A pair of neighboring spins has energy −J when parallel and +J when antiparallel, and a uniform external field H adds −H for each spin along it and +H for each against it:</p>
+  <div class="eq">E<sub>{s<sub>i</sub>}</sub> = −J Σ<sub>⟨ij⟩</sub> s<sub>i</sub>s<sub>j</sub> − H Σ<sub>i</sub> s<sub>i</sub></div>
+  <p class="prose">The first sum runs over distinct nearest-neighbor pairs. For J &gt; 0 parallel spins are favored, a ferromagnet; for J &lt; 0 antiparallel ones, an antiferromagnet. Click spins below to flip them. Even this 5 × 5 lattice has 2<sup>25</sup> = 33 554 432 microstates, while a macrostate such as “14 up and 11 down” lumps many of them together.</p>
+  <div class="two2">
+    <div><canvas id="toy" aria-label="5 by 5 Ising lattice; click a spin to flip it"></canvas>
+      <p class="plate-note">Free boundaries, 40 nearest-neighbor pairs. Blue bonds lower the energy and red bonds raise it: for J &gt; 0 blue joins parallel spins, for J &lt; 0 antiparallel ones.</p></div>
+    <div>
+      <fieldset style="margin-bottom:12px"><legend>Coupling</legend><div class="seg"><label><input type="radio" name="tj" value="1" checked><span>J = +1, ferromagnet</span></label><label><input type="radio" name="tj" value="-1"><span>J = −1, antiferromagnet</span></label></div></fieldset>
+      <div class="sl"><label for="tH">External field H</label><output id="tHo"></output><input type="range" id="tH" min="-2" max="2" step="0.1" value="0"></div>
+      <div class="row" style="margin-bottom:12px"><button id="tUp">All up</button><button id="tRnd">Random</button><button id="tChk">Checkerboard</button></div>
+      <dl class="readouts" id="toyRead"></dl>
+    </div>
+  </div>
+  <div class="tbl"><table aria-label="Pair energies">
+    <thead><tr><th>s<sub>i</sub></th><th>s<sub>j</sub></th><th>Configuration</th><th style="text-align:right">Interaction energy −J s<sub>i</sub>s<sub>j</sub></th></tr></thead>
+    <tbody><tr><td>+1</td><td>+1</td><td>↑ ↑</td><td class="num">−J</td></tr><tr><td>−1</td><td>−1</td><td>↓ ↓</td><td class="num">−J</td></tr><tr><td>+1</td><td>−1</td><td>↑ ↓</td><td class="num">+J</td></tr><tr><td>−1</td><td>+1</td><td>↓ ↑</td><td class="num">+J</td></tr></tbody>
+  </table></div>
+  <p class="prose" style="margin-top:18px">The interest is in how the model behaves as the temperature changes. When k<sub>B</sub>T ≪ J the interactions dominate and spins align to lower the energy; when k<sub>B</sub>T ≫ J they are effectively independent and point up and down at random, maximizing the entropy. Between these limits a high-temperature disordered (paramagnetic) phase gives way to a low-temperature ordered (ferromagnetic) phase. Try the temperature presets at the top: the lattice looks random at 4T<sub>c</sub>, grows ever larger domains on the way down, is a fractal of droplets within droplets at T<sub>c</sub>, and is almost fully aligned at 0.7T<sub>c</sub>.</p>
+</section>
+
+<section>
+  <h2>Statistical mechanics by exact enumeration</h2>
+  <p class="prose">In the canonical ensemble, a system in contact with a heat reservoir at temperature T is found in microstate {s<sub>i</sub>} with probability P = e<sup>−βE</sup>/Z, with β = 1/k<sub>B</sub>T. Every observable is an ensemble average, and everything follows from the partition function and the free energy:</p>
+  <div class="eq">Z(T, H) = Σ<sub>{s<sub>i</sub>}</sub> e<sup>−βE<sub>{s<sub>i</sub>}</sub></sup>,  F = ⟨E⟩ − TS = −k<sub>B</sub>T ln Z</div>
+  <p class="prose">Per spin: m = −(∂f/∂H)<sub>T</sub>, ε = −(1/N)(∂ ln Z/∂β)<sub>H</sub>, S/N = (ε − f)/T, and the response functions are second derivatives, χ = (∂m/∂H)<sub>T</sub> and c = (∂ε/∂T)<sub>H</sub>. Differentiating Z once more gives the fluctuation–dissipation relations k<sub>B</sub>Tχ = (⟨M²⟩ − ⟨M⟩²)/N and k<sub>B</sub>T²c = (⟨E²⟩ − ⟨E⟩²)/N: the response to a small push equals the size of the spontaneous fluctuations. For a small periodic lattice the page sums over every microstate exactly and checks both relations.</p>
+  <div class="row" style="gap:18px; margin-top:8px; align-items:flex-end">
+    <div class="field"><label class="lab" for="xL">Periodic lattice</label><select id="xL"><option value="3">3 × 3 (512 states)</option><option value="4" selected>4 × 4 (65 536 states)</option><option value="5">5 × 5 (33 554 432 states)</option></select></div>
+    <fieldset><legend>Interaction</legend><div class="seg"><label><input type="radio" name="xJ" value="1" checked><span>Ising, J = 1</span></label><label><input type="radio" name="xJ" value="0"><span>Non-interacting, J = 0</span></label></div></fieldset>
+    <span class="note" id="xStat"></span>
+  </div>
+  <div class="row" style="gap:24px; margin-top:6px">
+    <div class="sl" style="flex:1 1 240px"><label for="xH">Field H for the curves against T</label><output id="xHo"></output><input type="range" id="xH" min="0" max="1" step="0.01" value="0.05"></div>
+    <div class="sl" style="flex:1 1 240px"><label for="xT">Temperature T for the curves against H</label><output id="xTo"></output><input type="range" id="xT" min="0.2" max="6" step="0.01" value="2.27"></div>
+  </div>
+  <div class="figs">
+    <figure><figcaption><b>Magnetization m(T) at the chosen H</b>Blue: ⟨m⟩. Light: ⟨|m|⟩. Dashed: non-interacting spins, tanh(H/T). Exact for this finite lattice, so smooth everywhere.</figcaption><canvas id="x1"></canvas></figure>
+    <figure><figcaption><b>Susceptibility χ(T): response equals fluctuation</b>Line: χ = ∂m/∂H, a numerical derivative. Dots: (⟨M²⟩ − ⟨M⟩²)/(N k<sub>B</sub>T).</figcaption><canvas id="x2"></canvas></figure>
+    <figure><figcaption><b>Specific heat c(T): response equals fluctuation</b>Line: c = ∂ε/∂T. Dots: (⟨E²⟩ − ⟨E⟩²)/(N k<sub>B</sub>T²).</figcaption><canvas id="x3"></canvas></figure>
+    <figure><figcaption><b>Free energy, energy and entropy per spin</b>f = −T ln Z/N, ε, and S/N = (ε − f)/T, which rises to ln 2 (dotted) when the spins become random.</figcaption><canvas id="x4"></canvas></figure>
+    <figure><figcaption><b>Magnetization m(H) at the chosen T</b>Blue: this lattice. Dashed: tanh(H/T). Interactions make the response steeper.</figcaption><canvas id="x5"></canvas></figure>
+    <figure><figcaption><b>Probability of each total magnetization M</b>At the chosen T and H. At H = 0 it is always symmetric, so ⟨M⟩ = 0 exactly; a small field tips it to one side.</figcaption><canvas id="x6"></canvas></figure>
+  </div>
+  <div class="tbl"><table aria-label="Thermodynamic relations">
+    <thead><tr><th>Quantity</th><th>Relation</th><th>Response function</th></tr></thead>
+    <tbody>
+      <tr><td><b>Partition function</b></td><td>Z = Σ<sub>{s<sub>i</sub>}</sub> e<sup>−βE<sub>{s<sub>i</sub>}</sub></sup></td><td></td></tr>
+      <tr><td><b>Free energy per spin</b></td><td>f = −(1/N) k<sub>B</sub>T ln Z</td><td></td></tr>
+      <tr><td><b>Magnetization per spin</b></td><td>m = −(∂f/∂H)<sub>T</sub></td><td>χ = (∂m/∂H)<sub>T</sub> = −(∂²f/∂H²)<sub>T</sub></td></tr>
+      <tr><td><b>Energy per spin</b></td><td>ε = −(1/N)(∂ ln Z/∂β)<sub>H</sub> = f − T(∂f/∂T)<sub>H</sub></td><td>c = (∂ε/∂T)<sub>H</sub> = −T(∂²f/∂T²)<sub>H</sub></td></tr>
+      <tr><td><b>Entropy per spin</b></td><td>S/N = −(∂f/∂T)<sub>H</sub> = (ε − f)/T</td><td></td></tr>
+    </tbody></table></div>
+  <p class="prose" style="margin-top:18px">With 2<sup>N</sup> terms, Z is a finite sum of analytic functions, so f is analytic and nothing can be singular: no finite system has a phase transition. Only in the thermodynamic limit N → ∞, where boundary effects vanish and f → F<sub>bulk</sub>/N, can derivatives of f become discontinuous or diverge.</p>
+</section>
+
+<section>
+  <h2>Non-interacting spins</h2>
+  <p class="prose">With J = 0 the partition function factorizes into N identical terms, and everything is exact:</p>
+  <div class="eq">Z = [2 cosh(βH)]<sup>N</sup>,  f = −k<sub>B</sub>T ln[2 cosh(H/k<sub>B</sub>T)],  m = tanh(H/k<sub>B</sub>T),  χ = β sech²(βH)</div>
+  <p class="prose">Only the ratio H/k<sub>B</sub>T matters. When it is small the entropy wins and spins point at random; when it is large the energy wins and all spins follow the field. f is analytic for every T and H, and at H = 0 the magnetization is zero for any T &gt; 0: there is no spontaneous magnetization and no phase transition, because a transition is a cooperative phenomenon that needs interactions. The energy is ε = −H tanh(βH) and the specific heat c = (H/k<sub>B</sub>T)² sech²(βH), a Schottky peak.</p>
+  <div class="row" style="gap:24px">
+    <div class="sl" style="flex:1 1 240px"><label for="nT">Temperature T for the distribution</label><output id="nTo"></output><input type="range" id="nT" min="0.1" max="5" step="0.01" value="1"></div>
+    <div class="sl" style="flex:1 1 240px"><label for="nH">Field H for the distribution and the T curves</label><output id="nHo"></output><input type="range" id="nH" min="0" max="2" step="0.01" value="0.3"></div>
+  </div>
+  <div class="figs">
+    <figure><figcaption><b>m(H) = tanh(H/T)</b>For T = 0.02 (blue), 0.5 (green), 1 (orange) and 2 (pink). As T → 0 it becomes a step: m = ±1 for H → 0<sup>±</sup>.</figcaption><canvas id="n1"></canvas></figure>
+    <figure><figcaption><b>χ(H) = β sech²(βH)</b>For T = 0.5 (green), 1 (orange) and 2 (pink). At H = 0, χ = 1/T, which diverges only as T → 0.</figcaption><canvas id="n2"></canvas></figure>
+    <figure><figcaption><b>Energy ε(T) and specific heat c(T) at the chosen H</b>ε = −H tanh(H/T) (blue) and c = (H/T)² sech²(H/T) (red).</figcaption><canvas id="n3"></canvas></figure>
+    <figure><figcaption><b>Distribution of m = M/N for N = 16 (orange), 256 (green) and 4 096 (blue)</b>At the chosen T and H. It narrows around tanh(βH) as N grows: relative fluctuations shrink as 1/√N.</figcaption><canvas id="n4"></canvas><p class="fit" id="n4t"></p></figure>
+  </div>
+</section>
+
+<section>
+  <h2>Quantities of interest near T<sub>c</sub></h2>
+  <p class="prose">Back to the interacting model at H = 0. On the square lattice Onsager’s exact solution puts the transition at k<sub>B</sub>T<sub>c</sub>/J = 2/ln(1 + √2) ≈ 2.269. The page simulates 16 × 16, 32 × 32 and 64 × 64 lattices with the Wolff cluster algorithm at temperatures across T<sub>c</sub>, and compares them with the exact infinite-lattice results. As in percolation, the singular behavior is described by power laws:</p>
+  <div class="tbl"><table aria-label="Critical exponents">
+    <thead><tr><th>Exponent</th><th>Definition</th><th style="text-align:right">2D Ising (exact)</th><th style="text-align:right">Mean field</th><th style="text-align:right">2D percolation</th><th style="text-align:right">This run</th></tr></thead>
+    <tbody id="expBody"></tbody></table></div>
+  <div class="status">
+    <span id="chips" class="row" style="gap:14px"></span>
+    <span class="bar" aria-hidden="true"><i id="prog"></i></span>
+    <span id="stTxt"></span>
+    <button id="run">Pause</button>
+    <button id="more">Add more samples</button>
+  </div>
+  <div class="figs">
+    <figure><figcaption><b>Spontaneous magnetization m<sub>0</sub>(T)</b>Dots: ⟨|m|⟩ for each L. Dashed: Onsager, m<sub>0</sub> = [1 − sinh<sup>−4</sup>(2J/k<sub>B</sub>T)]<sup>1/8</sup>, which rises with β = 1/8 and a vertical tangent at T<sub>c</sub>.</figcaption><canvas id="s1"></canvas></figure>
+    <figure><figcaption><b>Susceptibility χ(T)</b>From the fluctuations, χ = N(⟨m²⟩ − ⟨|m|⟩²)/k<sub>B</sub>T. The peak grows as L<sup>γ/ν</sup> = L<sup>7/4</sup>.</figcaption><canvas id="s2"></canvas></figure>
+    <figure><figcaption><b>Specific heat c(T)</b>From energy fluctuations. Dashed: Onsager’s exact c for the infinite lattice, which diverges logarithmically (α = 0).</figcaption><canvas id="s3"></canvas></figure>
+    <figure><figcaption><b>Energy per spin ε(T)</b>Dashed: Onsager’s exact result. Continuous at T<sub>c</sub>, but with an infinite slope.</figcaption><canvas id="s4"></canvas></figure>
+    <figure><figcaption><b>Finite-size scaling at T<sub>c</sub></b>⟨|m|⟩ ∝ L<sup>−β/ν</sup> (blue) and N⟨m²⟩/k<sub>B</sub>T<sub>c</sub> ∝ L<sup>γ/ν</sup> (red), as for percolation on finite lattices. At T<sub>c</sub> the full ⟨m²⟩ is used, because subtracting ⟨|m|⟩² there removes part of the signal on small lattices.</figcaption><canvas id="s5"></canvas><p class="fit" id="s5t"></p></figure>
+  </div>
+  <p class="prose" style="margin-top:18px">The correlation length ξ is the typical size of the largest cluster of aligned spins, or equivalently the scale of the largest fluctuations away from the fully aligned state below T<sub>c</sub> and away from the random state above it. It diverges as ξ ∝ |T − T<sub>c</sub>|<sup>−ν</sup> and is defined through the spin–spin correlation function g(r<sub>i</sub>, r<sub>j</sub>) = ⟨s<sub>i</sub>s<sub>j</sub>⟩ − ⟨s<sub>i</sub>⟩⟨s<sub>j</sub>⟩. Summing g over all sites gives k<sub>B</sub>Tχ, so a diverging χ means g cannot decay exponentially at T<sub>c</sub>; it decays as r<sup>−(d−2+η)</sup>. The correlation chart under the live lattice shows this when it runs at T<sub>c</sub>.</p>
+</section>
+
+<section>
+  <h2>Symmetry breaking</h2>
+  <p class="prose">At H = 0 flipping every spin leaves the energy unchanged, so the microstates {s<sub>i</sub>} and {−s<sub>i</sub>} are equally probable and their magnetizations cancel: ⟨M⟩ = 0 exactly, at every temperature. A small field changes the ratio of their probabilities to</p>
+  <div class="eq">P<sub>{s<sub>i</sub>}</sub> / P<sub>{−s<sub>i</sub>}</sub> = exp(2βHM<sub>{s<sub>i</sub>}</sub>),  with M ∝ N</div>
+  <p class="prose">Taking H → 0 first, at fixed N, the ratio returns to 1 and ⟨M⟩ = 0. Taking N → ∞ first, the ratio becomes infinite for H → 0<sup>+</sup> and zero for H → 0<sup>−</sup>: one half of configuration space becomes inaccessible. This is ergodicity breaking, and it is what lets a nonzero magnetization survive. Simulations therefore usually record |m|.</p>
+  <div class="row" style="gap:24px; align-items:flex-end">
+    <div class="sl" style="flex:1 1 220px"><label for="bH">Field H</label><output id="bHo"></output><input type="range" id="bH" min="0" max="0.01" step="0.0001" value="0.001"></div>
+    <div class="sl" style="flex:1 1 220px"><label for="bT">Temperature T/T<sub>c</sub> (below T<sub>c</sub>)</label><output id="bTo"></output><input type="range" id="bT" min="0.5" max="0.99" step="0.01" value="0.9"></div>
+    <button id="demoSmall">Watch an 8 × 8 lattice flip</button>
+  </div>
+  <div class="tbl"><table id="ratioTable" aria-label="Probability ratio against system size"></table></div>
+  <p class="note" style="margin-top:10px">The demo button sets the live lattice at the top to 8 × 8, T = 0.95T<sub>c</sub>, H = 0 and Metropolis updates at 16 sweeps per frame: its magnetization jumps between +m and −m every few hundred sweeps, and the distribution of m fills in both peaks. At 16 × 16 the jumps are already about ten times rarer. A 128 × 128 lattice practically never does, and any small field picks the side.</p>
+</section>
+
+<section id="references">
+  <h2>References</h2>
+  <div class="keyref"><p class="prose" style="margin:0"><b>Key reference.</b> K. Christensen and N. R. Moloney, <i>Complexity and Criticality</i>, Imperial College Press, London (2005), Chapter 2.</p></div>
+  <ol class="refs">
+    <li>E. Ising, “Beitrag zur Theorie des Ferromagnetismus,” <i>Z. Phys.</i> <b>31</b>, 253 (1925).</li>
+    <li>S. G. Brush, “History of the Lenz–Ising model,” <i>Rev. Mod. Phys.</i> <b>39</b>, 883 (1967).</li>
+    <li>L. Onsager, “Crystal statistics. I. A two-dimensional model with an order-disorder transition,” <i>Phys. Rev.</i> <b>65</b>, 117 (1944).</li>
+    <li>C. N. Yang, “The spontaneous magnetization of a two-dimensional Ising model,” <i>Phys. Rev.</i> <b>85</b>, 808 (1952).</li>
+    <li>N. Metropolis, A. W. Rosenbluth, M. N. Rosenbluth, A. H. Teller and E. Teller, “Equation of state calculations by fast computing machines,” <i>J. Chem. Phys.</i> <b>21</b>, 1087 (1953).</li>
+    <li>U. Wolff, “Collective Monte Carlo updating for spin systems,” <i>Phys. Rev. Lett.</i> <b>62</b>, 361 (1989).</li>
+    <li>D. V. Schroeder, <i>An Introduction to Thermal Physics</i>, Addison-Wesley (2000), Chapter 6.</li>
+    <li>N. Goldenfeld, <i>Lectures on Phase Transitions and the Renormalization Group</i>, Addison-Wesley (1992).</li>
+  </ol>
+</section>
+
+<footer>
+  Simulations use Metropolis single-spin updates and Wolff cluster updates on periodic square lattices; exact results for small lattices enumerate every microstate with a Gray code.
+  <p style="margin-top:14px">Lecture notes by Sang Hoon Lee. Created by Claude Opus 5.5.</p>
+</footer>
+</div>
+
+<script>
+(() => {
+"use strict";
+const $ = id => document.getElementById(id);
+const C = {};
+function readColors(){
+  const cs=getComputedStyle(document.documentElement);
+  ['paper','panel','ink','muted','rule','grid','accent','crit','l16','l32','l64','l128','l256'].forEach(k=>C[k]=cs.getPropertyValue('--'+k).trim());
+}
+function hexRgb(h){ h=h.replace('#',''); if (h.length===3) h=h.split('').map(c=>c+c).join(''); const v=parseInt(h,16); return [(v>>16)&255,(v>>8)&255,v&255]; }
+const f3=(v,d=3)=>isFinite(v)?v.toFixed(d):'–';
+function linReg(xs,ys){
+  const n=xs.length; if (n<2) return null;
+  let mx=0,my=0; for (let i=0;i<n;i++){mx+=xs[i];my+=ys[i];} mx/=n; my/=n;
+  let sxx=0,sxy=0; for (let i=0;i<n;i++){ sxx+=(xs[i]-mx)**2; sxy+=(xs[i]-mx)*(ys[i]-my); }
+  const slope=sxy/sxx, icpt=my-slope*mx;
+  let se=NaN; if (n>2){ let r=0; for (let i=0;i<n;i++) r+=(ys[i]-icpt-slope*xs[i])**2; se=Math.sqrt(r/(n-2)/sxx); }
+  return {slope,icpt,se};
+}
+
+/* ---------- plotting ---------- */
+const SUP={'-':'⁻','0':'⁰','1':'¹','2':'²','3':'³','4':'⁴','5':'⁵','6':'⁶','7':'⁷','8':'⁸','9':'⁹'};
+const supNum = n => String(n).split('').map(c=>SUP[c]||c).join('');
+function niceStep(range,n){ const raw=range/n, p=Math.pow(10,Math.floor(Math.log10(raw))), f=raw/p; return (f<1.5?1:f<3?2:f<7?5:10)*p; }
+function fmtTick(v,step){ const dec=Math.max(0,-Math.floor(Math.log10(step)+1e-9)); return (Math.abs(v)<step/2?0:v).toFixed(Math.min(dec,4)); }
+function plot(cv,o){
+  const dpr=window.devicePixelRatio||1, W=cv.clientWidth, H=cv.clientHeight; if (!W||!H) return;
+  const pw_=Math.round(W*dpr), ph_=Math.round(H*dpr); if (cv.width!==pw_||cv.height!==ph_){cv.width=pw_; cv.height=ph_;}
+  const ctx=cv.getContext('2d'); ctx.setTransform(dpr,0,0,dpr,0,0); ctx.clearRect(0,0,W,H);
+  const m={l:54,r:12,t:10,b:36}, pw=W-m.l-m.r, ph=H-m.t-m.b;
+  const fx=o.logx?Math.log10:v=>v, fy=o.logy?Math.log10:v=>v;
+  const series=o.series||[];
+  let [x0,x1]=o.x||[Infinity,-Infinity];
+  if (!o.x){ series.forEach(s=>s.pts.forEach(p=>{ if (isFinite(p[0])&&(!o.logx||p[0]>0)){x0=Math.min(x0,p[0]);x1=Math.max(x1,p[0]);} })); }
+  let y0=Infinity,y1=-Infinity;
+  if (o.y){ [y0,y1]=o.y; }
+  else {
+    series.forEach(s=>{ if (s.noScale) return; s.pts.forEach(p=>{ const y=p[1]; if (p[0]>=x0&&p[0]<=x1&&isFinite(y)&&(!o.logy||y>0)){y0=Math.min(y0,y);y1=Math.max(y1,y);} }); });
+    if (!isFinite(y0)){ y0=o.logy?0.1:0; y1=o.logy?10:1; }
+    if (o.logy){ y0/=1.3; y1*=1.3; } else { const pad=(y1-y0||1)*0.06; y0 = o.zeroY ? Math.min(0,y0) : y0-pad; y1+=pad; }
+  }
+  if (!isFinite(x0)||!isFinite(x1)){ x0=o.logx?1:0; x1=o.logx?10:1; }
+  if (x0===x1){x0-=1;x1+=1;}
+  const X0=fx(x0),X1=fx(x1),Y0=fy(y0),Y1=fy(y1);
+  const X=v=>m.l+(fx(v)-X0)/(X1-X0)*pw, Y=v=>m.t+ph-(fy(v)-Y0)/(Y1-Y0)*ph;
+  cv._inv = px => { const t=(px-m.l)/pw; const v=X0+t*(X1-X0); return o.logx?Math.pow(10,v):v; };
+  ctx.font='11px "Public Sans", system-ui, sans-serif'; ctx.lineWidth=1;
+  function ticks(lo,hi,log,custom){
+    if (custom) return custom.filter(v=>v>=lo*0.999&&v<=hi*1.001).map(v=>[v,(o.xfmt||String)(v)]);
+    if (log){
+      if (!(lo>0)||!isFinite(hi)) return [];
+      const a=Math.floor(Math.log10(lo)), b=Math.ceil(Math.log10(hi)), out=[];
+      if (b-a>40) return [];
+      const mults = (b-a)<=1 ? [1,1.5,2,3,5,7] : (b-a)<=2 ? [1,2,5] : [1];
+      const stepK = (b-a)>6 ? 2 : 1;
+      for (let k=a;k<=b;k+=1) if (((k%stepK)+stepK)%stepK===0) mults.forEach(mu=>{ const v=mu*Math.pow(10,k); if (v>=lo&&v<=hi) out.push([v, mu===1 ? (k>=0&&k<=3 ? String(Math.pow(10,k)) : '10'+supNum(k)) : (k>=0? String(v): String(+v.toPrecision(2)))]); });
+      return out;
+    }
+    const st=niceStep(hi-lo,5), out=[];
+    if (!(st>0)||!isFinite(lo)||!isFinite(hi)) return out;
+    for (let v=Math.ceil(lo/st)*st; v<=hi+st*1e-6; v+=st) out.push([v,fmtTick(v,st)]);
+    return out;
+  }
+  ctx.fillStyle=C.panel; ctx.fillRect(m.l,m.t,pw,ph);
+  ctx.strokeStyle=C.grid; ctx.fillStyle=C.muted;
+  ctx.textAlign='center'; ctx.textBaseline='top';
+  ticks(x0,x1,o.logx,o.xticks).forEach(([v,l])=>{ const px=Math.round(X(v))+.5; ctx.beginPath(); ctx.moveTo(px,m.t); ctx.lineTo(px,m.t+ph); ctx.stroke(); ctx.fillText(l,px,m.t+ph+5); });
+  ctx.textAlign='right'; ctx.textBaseline='middle';
+  ticks(y0,y1,o.logy).forEach(([v,l])=>{ const py=Math.round(Y(v))+.5; ctx.beginPath(); ctx.moveTo(m.l,py); ctx.lineTo(m.l+pw,py); ctx.stroke(); ctx.fillText(l,m.l-6,py); });
+  ctx.strokeStyle=C.rule; ctx.strokeRect(m.l+.5,m.t+.5,pw-1,ph-1);
+  ctx.save(); ctx.beginPath(); ctx.rect(m.l,m.t,pw,ph); ctx.clip();
+  (o.vlines||[]).forEach(v=>{ if (v.x<x0||v.x>x1) return; ctx.strokeStyle=v.color; ctx.lineWidth=v.width||1; ctx.setLineDash(v.dash||[]); const px=X(v.x); ctx.beginPath(); ctx.moveTo(px,m.t); ctx.lineTo(px,m.t+ph); ctx.stroke(); ctx.setLineDash([]); if (v.label){ ctx.fillStyle=v.color; ctx.textAlign='left'; ctx.textBaseline='top'; ctx.fillText(v.label,px+4,m.t+4); } });
+  series.forEach(s=>{
+    ctx.strokeStyle=s.color; ctx.fillStyle=s.color; ctx.lineWidth=s.width||1.6; ctx.setLineDash(s.dash||[]); ctx.globalAlpha=s.alpha||1;
+    if (s.dots){ s.pts.forEach(p=>{ if (!isFinite(p[1])||(o.logy&&p[1]<=0)) return; ctx.beginPath(); ctx.arc(X(p[0]),Y(p[1]),s.r||4,0,7); ctx.fill(); }); }
+    else { ctx.beginPath(); let pen=false; s.pts.forEach(p=>{ const ok=isFinite(p[1])&&isFinite(p[0])&&(!o.logy||p[1]>0)&&(!o.logx||p[0]>0); if (!ok){pen=false;return;} const px=X(p[0]),py=Y(p[1]); if (pen) ctx.lineTo(px,py); else {ctx.moveTo(px,py); pen=true;} }); ctx.stroke(); }
+    ctx.setLineDash([]); ctx.globalAlpha=1;
+  });
+  ctx.restore();
+  ctx.fillStyle=C.muted; ctx.textAlign='center'; ctx.textBaseline='bottom';
+  if (o.xlabel) ctx.fillText(o.xlabel, m.l+pw/2, H-1);
+  if (o.ylabel){ ctx.save(); ctx.translate(11,m.t+ph/2); ctx.rotate(-Math.PI/2); ctx.textBaseline='middle'; ctx.fillText(o.ylabel,0,0); ctx.restore(); }
+}
+
+
+
+const TC=2/Math.log(1+Math.SQRT2);
+/* ---------- exact infinite-lattice results (Onsager, Yang) ---------- */
+function m0(T){ if (T>=TC) return 0; const s=Math.sinh(2/T); return Math.pow(1-Math.pow(s,-4),1/8); }
+function agm(a,b){ for (let i=0;i<60;i++){ const a2=(a+b)/2, b2=Math.sqrt(a*b); a=a2; b=b2; if (Math.abs(a-b)<1e-15) break; } return a; }
+function uOns(T){ const b=1/T, k=2*Math.sinh(2*b)/Math.cosh(2*b)**2; const kp=Math.sqrt(Math.max(1e-300,1-k*k)); const K=Math.PI/(2*agm(1,kp)); const t=Math.tanh(2*b); return -(1/Math.tanh(2*b))*(1+(2/Math.PI)*(2*t*t-1)*K); }
+function cOns(T){ const h=1e-4*T; return (uOns(T+h)-uOns(T-h))/(2*h); }
+
+/* ---------- Monte Carlo kernels ---------- */
+function mkLattice(L,kind){ const s=new Int8Array(L*L); for (let i=0;i<s.length;i++) s[i]= kind==='up'?1:kind==='down'?-1:(Math.random()<0.5?1:-1); return s; }
+function metroSweep(s,L,T,H){
+  const w=new Float64Array(18), b=1/T;
+  for (let a=0;a<2;a++) for (let n=-4;n<=4;n++){ const sp=a?1:-1, dE=2*sp*(n+H); w[a*9+n+4]= dE<=0?1:Math.exp(-b*dE); }
+  for (let par=0;par<2;par++) for (let y=0;y<L;y++){ const up=((y+L-1)%L)*L, dn=((y+1)%L)*L, row=y*L;
+    for (let x=(y+par)&1;x<L;x+=2){ const i=row+x, sp=s[i]; const n=s[row+(x+1)%L]+s[row+(x+L-1)%L]+s[up+x]+s[dn+x]; const p=w[(sp>0?9:0)+n+4]; if (p>=1||Math.random()<p) s[i]=-sp; } }
+}
+function wolffFlip(s,L,padd,stack){
+  const N=L*L, i0=(Math.random()*N)|0, sp=s[i0]; let top=0, c=1; stack[top++]=i0; s[i0]=-sp;
+  while (top){ const i=stack[--top], x=i%L, y=(i-x)/L;
+    const nb0=y*L+(x+1)%L, nb1=y*L+(x+L-1)%L, nb2=((y+1)%L)*L+x, nb3=((y+L-1)%L)*L+x;
+    if (s[nb0]===sp && Math.random()<padd){ s[nb0]=-sp; stack[top++]=nb0; c++; }
+    if (s[nb1]===sp && Math.random()<padd){ s[nb1]=-sp; stack[top++]=nb1; c++; }
+    if (s[nb2]===sp && Math.random()<padd){ s[nb2]=-sp; stack[top++]=nb2; c++; }
+    if (s[nb3]===sp && Math.random()<padd){ s[nb3]=-sp; stack[top++]=nb3; c++; } }
+  return c;
+}
+function wolffSweep(s,L,T,stack){ const N=L*L, padd=1-Math.exp(-2/T); let f=0; while (f<N) f+=wolffFlip(s,L,padd,stack); }
+function measure(s,L,H){ let M=0, B=0; for (let y=0;y<L;y++){ const row=y*L, dn=((y+1)%L)*L; for (let x=0;x<L;x++){ const sp=s[row+x]; M+=sp; B+=sp*(s[row+(x+1)%L]+s[dn+x]); } } const N=L*L; return {m:M/N, e:(-B-H*M)/N}; }
+
+/* ---------- live lattice ---------- */
+const LV={L:128,tr:1,H:0,alg:'metro',spf:4,running:true};
+let LS=null, stackLive=null;
+function liveReset(kind){ LS={s:mkLattice(LV.L,kind),sweeps:0,ts:[],hist:new Float64Array(81),hn:0,corr:new Float64Array(LV.L/2+1),cn:0,mabs:0,mn:0,frame:0}; stackLive=new Int32Array(LV.L*LV.L); }
+function liveStats(){ LS.sweeps=0; LS.ts=[]; LS.hist.fill(0); LS.hn=0; LS.corr=new Float64Array(LV.L/2+1); LS.cn=0; LS.mabs=0; LS.mn=0; }
+function corrAccum(){ const s=LS.s, L=LV.L, R=L/2; for (let r=0;r<=R;r++){ let a=0; for (let y=0;y<L;y++){ const row=y*L, row2=((y+r)%L)*L; for (let x=0;x<L;x++){ const sp=s[row+x]; a+=sp*(s[row+(x+r)%L]+s[row2+x]); } } LS.corr[r]+=a/(2*L*L); } LS.cn++; }
+let off=null, img=null;
+function renderSpins(){
+  const cv=$('spin'), L=LV.L, dpr=window.devicePixelRatio||1, w=Math.max(1,Math.round(cv.clientWidth*dpr)); if (cv.width!==w){ cv.width=w; cv.height=w; }
+  if (!off||off.width!==L){ off=document.createElement('canvas'); off.width=L; off.height=L; img=off.getContext('2d').createImageData(L,L); }
+  const up=hexRgb(C.panel), dn=hexRgb(C.ink), d=img.data, s=LS.s;
+  for (let i=0;i<L*L;i++){ const c=s[i]>0?up:dn, k=4*i; d[k]=c[0]; d[k+1]=c[1]; d[k+2]=c[2]; d[k+3]=255; }
+  off.getContext('2d').putImageData(img,0,0); const ctx=cv.getContext('2d'); ctx.imageSmoothingEnabled=false; ctx.drawImage(off,0,0,w,w);
+}
+function liveCharts(){
+  const T=LV.tr*TC, mm=m0(T), n=LS.ts.length;
+  plot($('tsC'),{x:[0,Math.max(50,n)],y:[-1.05,1.05],series:[{color:C.accent,width:1.4,pts:LS.ts.map((v,i)=>[i,v])}].concat(mm>0?[{color:C.crit,dash:[5,4],width:1.1,pts:[[0,mm],[1e9,mm]]},{color:C.crit,dash:[5,4],width:1.1,pts:[[0,-mm],[1e9,-mm]]}]:[]),xlabel:'frames (most recent 600)',ylabel:'m'});
+  const hp=[]; if (LS.hn) for (let k=0;k<81;k++) hp.push([-1+k*2/80,LS.hist[k]/LS.hn/(2/80)]);
+  plot($('hiC'),{x:[-1,1],zeroY:true,series:[{color:C.accent,width:1.8,pts:hp}],vlines:mm>0?[{x:mm,color:C.crit,dash:[4,4]},{x:-mm,color:C.crit,dash:[4,4]}]:[],xlabel:'m',ylabel:'probability density'});
+  const ma=LS.mn?LS.mabs/LS.mn:0, g=[];
+  if (LS.cn) for (let r=1;r<=LV.L/2;r++){ const v=LS.corr[r]/LS.cn-ma*ma; if (v>0) g.push([r,v]); }
+  const ser=[{color:C.accent,width:1.8,pts:g},{dots:true,r:3,color:C.accent,pts:g}];
+  if (g.length) ser.push({color:C.ink,dash:[6,4],width:1.2,noScale:true,pts:[1,LV.L/2].map(r=>[r,g[0][1]*Math.pow(r,-0.25)])});
+  plot($('gC'),{logx:true,logy:true,series:ser,xlabel:'distance r',ylabel:'g(r)'});
+}
+function liveFrame(){
+  if (LV.running && LS){
+    const T=LV.tr*TC, useW=LV.alg==='wolff'&&LV.H===0;
+    for (let k=0;k<LV.spf;k++){ if (useW) wolffSweep(LS.s,LV.L,T,stackLive); else metroSweep(LS.s,LV.L,T,LV.H); LS.sweeps++; }
+    const q=measure(LS.s,LV.L,LV.H); LS.q=q;
+    LS.ts.push(q.m); if (LS.ts.length>600) LS.ts.shift();
+    LS.hist[Math.min(80,Math.max(0,Math.round((q.m+1)*40)))]++; LS.hn++; LS.mabs+=Math.abs(q.m); LS.mn++;
+    LS.frame++; if (LS.frame % Math.max(1,LV.L/32)===0) corrAccum();
+    renderSpins(); liveCharts(); liveRead();
+  }
+  requestAnimationFrame(liveFrame);
+}
+function liveRead(){
+  const T=LV.tr*TC; $('tOut').textContent=LV.tr.toFixed(3); $('hOut').textContent=LV.H.toFixed(2);
+  $('rT').textContent=T.toFixed(3); $('rM0').textContent= T<TC ? '±'+m0(T).toFixed(4) : '0';
+  if (LS && LS.q){ $('rM').textContent=LS.q.m.toFixed(4); $('rE').textContent=LS.q.e.toFixed(4); $('rMa').textContent=(LS.mabs/LS.mn).toFixed(4); }
+  $('rSw').textContent=LS?LS.sweeps:0;
+  $('spinNote').textContent=`Up spins are white and down spins are black, as in the lecture notes. ${LV.L} × ${LV.L}, periodic boundaries.${LV.alg==='wolff'&&LV.H!==0?' The Wolff rule needs H = 0, so Metropolis is used while the field is on.':''}`;
+}
+
+/* ---------- toy 5 x 5 lattice ---------- */
+const TOY={L:5,J:1,H:0,s:new Int8Array(25)};
+(function(){ const pat='+++--++-+-++-+--+-++--+++'; for (let i=0;i<25;i++) TOY.s[i]=pat[i]==='+'?1:-1; })();
+function toyDraw(){
+  const cv=$('toy'), dpr=window.devicePixelRatio||1, W=cv.clientWidth; if (!W) return; const w=Math.round(W*dpr); if (cv.width!==w){ cv.width=w; cv.height=w; }
+  const ctx=cv.getContext('2d'); ctx.setTransform(dpr,0,0,dpr,0,0); ctx.fillStyle=C.panel; ctx.fillRect(0,0,W,W);
+  const L=5, c=W/L, s=TOY.s; let sat=0, uns=0, up=0, M=0;
+  ctx.lineWidth=Math.max(3,c*0.09); ctx.lineCap='round';
+  for (let y=0;y<L;y++) for (let x=0;x<L;x++){ const i=y*L+x;
+    for (const [dx,dy] of [[1,0],[0,1]]){ const X2=x+dx, Y2=y+dy; if (X2>=L||Y2>=L) continue; const j=Y2*L+X2, par=s[i]*s[j]>0; if (par) sat++; else uns++;
+      ctx.strokeStyle= (par===(TOY.J>0)) ? C.accent : C.crit; ctx.globalAlpha=0.75; ctx.beginPath(); ctx.moveTo((x+0.5)*c+dx*c*0.28,(y+0.5)*c+dy*c*0.28); ctx.lineTo((X2+0.5)*c-dx*c*0.28,(Y2+0.5)*c-dy*c*0.28); ctx.stroke(); ctx.globalAlpha=1; } }
+  ctx.font=`600 ${Math.round(c*0.5)}px "Public Sans", system-ui, sans-serif`; ctx.textAlign='center'; ctx.textBaseline='middle';
+  for (let i=0;i<25;i++){ const x=i%L, y=(i/L)|0; const sp=s[i]; if (sp>0) up++; M+=sp;
+    ctx.fillStyle= sp>0 ? C.panel : C.ink; ctx.strokeStyle=C.ink; ctx.lineWidth=1.5; ctx.beginPath(); ctx.arc((x+0.5)*c,(y+0.5)*c,c*0.27,0,7); ctx.fill(); ctx.stroke();
+    ctx.fillStyle= sp>0 ? C.ink : C.panel; ctx.fillText(sp>0?'↑':'↓',(x+0.5)*c,(y+0.52)*c); }
+  const Eint=-TOY.J*(sat-uns), Eext=-TOY.H*M;
+  $('tHo').textContent=TOY.H.toFixed(1);
+  $('toyRead').innerHTML=`<dt>Up spins / down spins</dt><dd>${up} / ${25-up}</dd><dt>Total magnetization M = Σ s<sub>i</sub></dt><dd>${M}</dd><dt>Parallel / antiparallel pairs</dt><dd>${sat} / ${uns}</dd><dt>E<sub>int</sub> = −J Σ s<sub>i</sub>s<sub>j</sub></dt><dd>${Eint.toFixed(1)}</dd><dt>E<sub>ext</sub> = −H Σ s<sub>i</sub></dt><dd>${Eext.toFixed(1)}</dd><dt>Total energy E</dt><dd>${(Eint+Eext).toFixed(1)}</dd><dt>${TOY.J>0?'Energy with all spins along the field':'Energy of the checkerboard (best for small H)'}</dt><dd>${(-40-Math.abs(TOY.H)*(TOY.J>0?25:1)).toFixed(1)}</dd>`;
+}
+
+/* ---------- exact enumeration ---------- */
+const ENUM={};
+let enumJob=null;
+function* enumerate(L){
+  const N=L*L, nb=[];
+  for (let i=0;i<N;i++){ const x=i%L, y=(i/L)|0; nb.push([y*L+(x+1)%L, y*L+(x+L-1)%L, ((y+1)%L)*L+x, ((y+L-1)%L)*L+x]); }
+  const s=new Int8Array(N).fill(-1), hist=new Float64Array((4*N+1)*(N+1));
+  let B=2*N, M=-N; const idx=()=>((B+2*N)*(N+1)+((M+N)>>1));
+  hist[idx()]++;
+  const total=Math.pow(2,N);
+  for (let k=1;k<total;k++){
+    const j=31-Math.clz32(k & -k), sp=s[j], a=nb[j];
+    B-=2*sp*(s[a[0]]+s[a[1]]+s[a[2]]+s[a[3]]); M-=2*sp; s[j]=-sp; hist[idx()]++;
+    if ((k & 0x3FFFF)===0) yield k/total;
+  }
+  const list=[]; for (let b=0;b<=4*N;b++) for (let q=0;q<=N;q++){ const c=hist[b*(N+1)+q]; if (c>0) list.push([b-2*N,2*q-N,Math.log(c)]); }
+  ENUM[L]={N,list};
+}
+function thermo(L,T,H,J){
+  const E=ENUM[L]; if (!E) return null; const N=E.N; let mx=-Infinity;
+  for (const [B,M,lc] of E.list){ const x=(J*B+H*M)/T+lc; if (x>mx) mx=x; }
+  let Z=0,sM=0,sM2=0,sMa=0,sE=0,sE2=0;
+  for (const [B,M,lc] of E.list){ const w=Math.exp((J*B+H*M)/T+lc-mx), En=-J*B-H*M; Z+=w; sM+=w*M; sM2+=w*M*M; sMa+=w*Math.abs(M); sE+=w*En; sE2+=w*En*En; }
+  sM/=Z; sM2/=Z; sMa/=Z; sE/=Z; sE2/=Z;
+  const lnZ=mx+Math.log(Z), f=-T*lnZ/N, eps=sE/N;
+  return {N,m:sM/N,ma:sMa/N,f,eps,S:(eps-f)/T,chiF:(sM2-sM*sM)/(N*T),cF:(sE2-sE*sE)/(N*T*T)};
+}
+function pM(L,T,H,J){
+  const E=ENUM[L]; if (!E) return []; const N=E.N, acc=new Map(); let mx=-Infinity;
+  for (const [B,M,lc] of E.list){ const x=(J*B+H*M)/T+lc; if (x>mx) mx=x; }
+  let Z=0; for (const [B,M,lc] of E.list){ const w=Math.exp((J*B+H*M)/T+lc-mx); Z+=w; acc.set(M,(acc.get(M)||0)+w); }
+  return [...acc.entries()].sort((a,b)=>a[0]-b[0]).map(([M,w])=>[M,w/Z]);
+}
+const X={L:4,J:1};
+function runEnum(L){
+  if (ENUM[L]){ drawEnum(); return; }
+  const it=enumerate(L); enumJob=it;
+  const step=()=>{ if (enumJob!==it) return; const t0=performance.now(); let r;
+    while (performance.now()-t0<25){ r=it.next(); if (r.done) break; $('xStat').textContent=`Enumerating ${L} × ${L}: ${(100*r.value).toFixed(0)}%`; }
+    if (r && r.done){ $('xStat').textContent=`${L} × ${L}: all ${Math.pow(2,L*L).toLocaleString('en-US')} microstates summed exactly.`; drawEnum(); } else setTimeout(step,0); };
+  $('xStat').textContent=`Enumerating ${L} × ${L}…`; setTimeout(step,0);
+}
+const TGRID=Array.from({length:240},(_,i)=>0.15+i*(6-0.15)/239);
+function drawEnum(){
+  const L=X.L, J=X.J, H=+$('xH').value, Tf=+$('xT').value; $('xHo').textContent=H.toFixed(2); $('xTo').textContent=Tf.toFixed(2);
+  if (!ENUM[L]) return;
+  const d=0.002, rows=TGRID.map(T=>{ const a=thermo(L,T,H,J), hp=thermo(L,T,H+d,J), hm=thermo(L,T,H-d,J), tp=thermo(L,T+d,H,J), tm=thermo(L,T-d,H,J); return {T,a,chiD:(hp.m-hm.m)/(2*d),cD:(tp.eps-tm.eps)/(2*d)}; });
+  const vl=[{x:TC,color:C.crit,dash:[4,4],label:'Tc (∞)'}];
+  plot($('x1'),{x:[0,6],y:[-0.02,1.02],series:[{color:C.accent,width:2,pts:rows.map(r=>[r.T,r.a.m])},{color:C.l32,width:1.4,pts:rows.map(r=>[r.T,r.a.ma])},{color:C.ink,dash:[6,4],width:1.2,pts:rows.map(r=>[r.T,Math.tanh(H/r.T)])}],vlines:vl,xlabel:'T',ylabel:'m'});
+  const sub=(arr)=>arr.filter((_,i)=>i%6===0);
+  plot($('x2'),{x:[0,6],zeroY:true,series:[{color:C.accent,width:2,pts:rows.map(r=>[r.T,r.chiD])},{dots:true,r:3.5,color:C.crit,pts:sub(rows).map(r=>[r.T,r.a.chiF])}],vlines:vl,xlabel:'T',ylabel:'χ'});
+  plot($('x3'),{x:[0,6],zeroY:true,series:[{color:C.accent,width:2,pts:rows.map(r=>[r.T,r.cD])},{dots:true,r:3.5,color:C.crit,pts:sub(rows).map(r=>[r.T,r.a.cF])}],vlines:vl,xlabel:'T',ylabel:'c'});
+  plot($('x4'),{x:[0,6],series:[{color:C.accent,width:2,pts:rows.map(r=>[r.T,r.a.f])},{color:C.ink,width:1.6,pts:rows.map(r=>[r.T,r.a.eps])},{color:C.crit,width:1.8,pts:rows.map(r=>[r.T,r.a.S])},{color:C.crit,dash:[2,4],width:1,pts:[[0,Math.LN2],[6,Math.LN2]]}],vlines:vl,xlabel:'T',ylabel:'f (blue), ε (dark), S/N (red)'});
+  const HG=Array.from({length:161},(_,i)=>-2+i*4/160);
+  plot($('x5'),{x:[-2,2],y:[-1.05,1.05],series:[{color:C.accent,width:2,pts:HG.map(h=>[h,thermo(L,Tf,h,J).m])},{color:C.ink,dash:[6,4],width:1.2,pts:HG.map(h=>[h,Math.tanh(h/Tf)])}],xlabel:'H',ylabel:'m'});
+  const pm=pM(L,Tf,H,J);
+  plot($('x6'),{x:[-ENUM[L].N-1,ENUM[L].N+1],zeroY:true,series:[{color:C.accent,width:1.4,pts:pm},{dots:true,r:4,color:C.accent,pts:pm}],xlabel:'total magnetization M',ylabel:'P(M)'});
+}
+
+/* ---------- non-interacting spins ---------- */
+const sech=x=>1/Math.cosh(x);
+function lnBinom(n,k){ return lg(n+1)-lg(k+1)-lg(n-k+1); }
+function lg(x){ const c=[0.99999999999980993,676.5203681218851,-1259.1392167224028,771.32342877765313,-176.61502916214059,12.507343278686905,-0.13857109526572012,9.9843695780195716e-6,1.5056327351493116e-7]; if (x<0.5) return Math.log(Math.PI/Math.sin(Math.PI*x))-lg(1-x); x-=1; let a=c[0]; const t=x+7.5; for (let i=1;i<9;i++) a+=c[i]/(x+i); return 0.5*Math.log(2*Math.PI)+(x+0.5)*Math.log(t)-t+Math.log(a); }
+function drawNon(){
+  const T=+$('nT').value, H=+$('nH').value; $('nTo').textContent=T.toFixed(2); $('nHo').textContent=H.toFixed(2);
+  const HG=Array.from({length:301},(_,i)=>-3+i*6/300), Ts=[[0.02,C.accent],[0.5,C.l64],[1,C.l16],[2,C.l128]];
+  plot($('n1'),{x:[-3,3],y:[-1.05,1.05],series:Ts.map(([t,c])=>({color:c,width:t===0.02?2.2:1.6,pts:HG.map(h=>[h,Math.tanh(h/t)])})),xlabel:'H',ylabel:'m'});
+  plot($('n2'),{x:[-3,3],y:[0,2.2],series:Ts.slice(1).map(([t,c])=>({color:c,width:1.6,pts:HG.map(h=>[h,sech(h/t)**2/t])})),xlabel:'H',ylabel:'χ'});
+  const TG=Array.from({length:300},(_,i)=>0.005+i*Math.max(2,10*H)/299);
+  plot($('n3'),{x:[0,Math.max(2,10*H)],series:[{color:C.accent,width:2,pts:TG.map(t=>[t,-H*Math.tanh(H/t)])},{color:C.crit,width:2,pts:TG.map(t=>[t,(H/t)**2*sech(H/t)**2])}],xlabel:'T',ylabel:'ε (blue), c (red)'});
+  const q=Math.exp(H/T)/(2*Math.cosh(H/T)), ser=[], Ns=[[16,C.l16],[256,C.l64],[4096,C.accent]];
+  Ns.forEach(([N,c])=>{ const pts=[]; for (let n=0;n<=N;n++){ const lp=lnBinom(N,n)+n*Math.log(q)+(N-n)*Math.log(1-q); const p=Math.exp(lp); if (p<1e-9 && N>16) continue; pts.push([2*n/N-1,p*N/2]); } ser.push({color:c,width:1.8,pts}); });
+  plot($('n4'),{x:[-1,1],zeroY:true,series:ser,vlines:[{x:Math.tanh(H/T),color:C.crit,dash:[4,4]}],xlabel:'m = M/N',ylabel:'probability density'});
+  const rel=H>0?1/Math.sinh(H/T):Infinity;
+  $('n4t').innerHTML= H>0 ? `Relative fluctuation √(⟨M²⟩ − ⟨M⟩²)/⟨M⟩ = csch(βH)/√N: ${Ns.map(([N])=>`N = ${N}: <b>${(rel/Math.sqrt(N)).toFixed(3)}</b>`).join(', ')}.` : 'At H = 0, ⟨M⟩ = 0, so the relative fluctuation is undefined; the spread still shrinks as 1/√N.';
+}
+
+/* ---------- temperature sweep with the Wolff algorithm ---------- */
+const SIZES=[16,32,64], RATIOS=[0.6,0.7,0.8,0.85,0.9,0.93,0.95,0.97,0.98,0.99,1,1.01,1.02,1.03,1.05,1.07,1.1,1.15,1.2,1.3,1.5,1.8,2.2];
+const EQ=200; let BASE=1500, sw=[];
+function makeSweep(){ sw=[]; SIZES.forEach(L=>RATIOS.forEach(r=>sw.push({L,r,T:r*TC,s:mkLattice(L,r<1?'up':'random'),stack:new Int32Array(L*L),eq:0,cnt:0,a:0,m2:0,e:0,e2:0}))); }
+function swStep(st){ wolffSweep(st.s,st.L,st.T,st.stack); if (st.eq<EQ){ st.eq++; return; } const q=measure(st.s,st.L,0); const ma=Math.abs(q.m); st.a+=ma; st.m2+=q.m*q.m; st.e+=q.e; st.e2+=q.e*q.e; st.cnt++; }
+let running=true, timer=null, lastRef=0;
+function pick(){ let b=null, br=1; sw.forEach(s=>{ const r=s.cnt/BASE; if (r<br){ br=r; b=s; } }); return b; }
+function work(){ timer=null; if (!running) return; const t0=performance.now(); let did=false;
+  while (performance.now()-t0<9){ const st=pick(); if (!st) break; swStep(st); did=true; }
+  if (did){ if (performance.now()-lastRef>800){ drawSweep(); lastRef=performance.now(); } timer=setTimeout(work,0); } else { drawSweep(); running=false; $('run').textContent='Resume'; }
+}
+function start(){ if (!running){ running=true; $('run').textContent='Pause'; } if (!timer) timer=setTimeout(work,0); }
+const LCOL=L=>({16:C.l16,32:C.l64,64:C.accent})[L];
+const R={};
+function drawSweep(){
+  let d=0; sw.forEach(s=>d+=Math.min(s.cnt,BASE)); $('prog').style.width=(100*d/(sw.length*BASE)).toFixed(1)+'%';
+  $('chips').innerHTML=SIZES.map(L=>{ const q=sw.filter(s=>s.L===L); return `<span class="chip"><i class="sw" style="background:${LCOL(L)}"></i>L = ${L} <span style="color:var(--muted)">${Math.min(...q.map(s=>s.cnt))}/${BASE} per T</span></span>`; }).join('');
+  $('stTxt').textContent= pick()?(running?'Sampling…':'Paused'):'Done';
+  const TG=Array.from({length:300},(_,i)=>0.5+i*1.8/299);
+  const by=L=>sw.filter(s=>s.L===L&&s.cnt>0);
+  const ser1=[{color:C.ink,dash:[6,4],width:1.3,pts:TG.map(r=>[r,m0(r*TC)])}], ser2=[], ser3=[{color:C.ink,dash:[6,4],width:1.3,noScale:true,pts:TG.filter(r=>Math.abs(r-1)>0.004).map(r=>[r,cOns(r*TC)])}], ser4=[{color:C.ink,dash:[6,4],width:1.3,pts:TG.map(r=>[r,uOns(r*TC)])}];
+  SIZES.forEach(L=>{ const q=by(L), N=L*L, col=LCOL(L);
+    const pa=q.map(s=>[s.r,s.a/s.cnt]), pc=q.map(s=>[s.r,N*(s.m2/s.cnt-(s.a/s.cnt)**2)/s.T]), ph=q.map(s=>[s.r,N*(s.e2/s.cnt-(s.e/s.cnt)**2)/(s.T*s.T)]), pe=q.map(s=>[s.r,s.e/s.cnt]);
+    ser1.push({color:col,width:1.2,pts:pa},{dots:true,r:3.5,color:col,pts:pa}); ser2.push({color:col,width:1.2,pts:pc},{dots:true,r:3.5,color:col,pts:pc}); ser3.push({color:col,width:1.2,pts:ph},{dots:true,r:3.5,color:col,pts:ph}); ser4.push({dots:true,r:3.5,color:col,pts:pe}); });
+  const vl=[{x:1,color:C.crit,dash:[4,4],label:'Tc'}];
+  plot($('s1'),{x:[0.5,2.3],y:[-0.02,1.02],series:ser1,vlines:vl,xlabel:'T / Tc',ylabel:'⟨|m|⟩'});
+  plot($('s2'),{x:[0.5,2.3],zeroY:true,series:ser2,vlines:vl,xlabel:'T / Tc',ylabel:'χ'});
+  plot($('s3'),{x:[0.5,2.3],y:[0,3],series:ser3,vlines:vl,xlabel:'T / Tc',ylabel:'c'});
+  plot($('s4'),{x:[0.5,2.3],series:ser4,vlines:vl,xlabel:'T / Tc',ylabel:'ε'});
+  const at=SIZES.map(L=>sw.find(s=>s.L===L&&s.r===1)).filter(s=>s&&s.cnt>20);
+  const pm=at.map(s=>[s.L,s.a/s.cnt]), px=at.map(s=>[s.L,s.L*s.L*(s.m2/s.cnt)/s.T]);
+  const fm=pm.length>=2?linReg(pm.map(p=>Math.log(p[0])),pm.map(p=>Math.log(p[1]))):null, fx=px.length>=2?linReg(px.map(p=>Math.log(p[0])),px.map(p=>Math.log(p[1]))):null;
+  const ser5=[{dots:true,r:5,color:C.accent,pts:pm},{dots:true,r:5,color:C.crit,pts:px}];
+  if (fm) ser5.push({color:C.accent,dash:[6,4],width:1.2,pts:[12,90].map(L=>[L,Math.exp(fm.icpt+fm.slope*Math.log(L))])});
+  if (fx) ser5.push({color:C.crit,dash:[6,4],width:1.2,pts:[12,90].map(L=>[L,Math.exp(fx.icpt+fx.slope*Math.log(L))])});
+  plot($('s5'),{x:[12,90],logx:true,logy:true,xticks:[16,32,64],series:ser5,xlabel:'L',ylabel:'⟨|m|⟩ and χ at Tc'});
+  R.bn=fm?-fm.slope:NaN; R.gn=fx?fx.slope:NaN;
+  $('s5t').innerHTML=(fm?`β/ν ≈ <b>${R.bn.toFixed(3)}</b> <span style="color:var(--muted)">exact 1/8</span>`:'')+(fx?`, γ/ν ≈ <b>${R.gn.toFixed(3)}</b> <span style="color:var(--muted)">exact 7/4</span>`:'');
+  const rows=[['α','c ∝ |T − T<sub>c</sub>|<sup>−α</sup>','0 (logarithmic)','0 (jump)','−2/3','–'],['β','m<sub>0</sub> ∝ (T<sub>c</sub> − T)<sup>β</sup>','1/8','1/2','5/36','–'],['γ','χ ∝ |T − T<sub>c</sub>|<sup>−γ</sup>','7/4','1','43/18','–'],['δ','m(T<sub>c</sub>, H) ∝ |H|<sup>1/δ</sup>','15','3','91/5','–'],['ν','ξ ∝ |T − T<sub>c</sub>|<sup>−ν</sup>','1','1/2','4/3','–'],['η','g(r) ∝ r<sup>−(d−2+η)</sup> at T<sub>c</sub>','1/4','0','5/24','–'],['β/ν','⟨|m|⟩ ∝ L<sup>−β/ν</sup> at T<sub>c</sub>','1/8','–','5/48',f3(R.bn)],['γ/ν','χ ∝ L<sup>γ/ν</sup> at T<sub>c</sub>','7/4','–','43/24',f3(R.gn)]];
+  $('expBody').innerHTML=rows.map(r=>`<tr><td><b>${r[0]}</b></td><td>${r[1]}</td><td class="num">${r[2]}</td><td class="num">${r[3]}</td><td class="num">${r[4]}</td><td class="num">${r[5]}</td></tr>`).join('');
+}
+
+/* ---------- symmetry breaking table ---------- */
+function drawRatio(){
+  const H=+$('bH').value, tr=+$('bT').value, T=tr*TC, m=m0(T); $('bHo').textContent=H.toFixed(4); $('bTo').textContent=tr.toFixed(2);
+  const Ns=[16,256,4096,65536,1048576,16777216];
+  const fmt=x=>{ const l10=x/Math.LN10; if (l10<6) return Math.exp(x).toPrecision(4); return '10<sup>'+Math.round(l10)+'</sup>'; };
+  $('ratioTable').innerHTML=`<thead><tr><th style="text-align:right">N</th><th style="text-align:right">M = m<sub>0</sub>N with m<sub>0</sub> = ${m.toFixed(3)}</th><th style="text-align:right">P<sub>{s<sub>i</sub>}</sub>/P<sub>{−s<sub>i</sub>}</sub> = exp(2HM/k<sub>B</sub>T)</th></tr></thead><tbody>`+
+    Ns.map(N=>`<tr><td class="num">${N.toLocaleString('en-US')}</td><td class="num">${Math.round(m*N).toLocaleString('en-US')}</td><td class="num">${fmt(2*H*m*N/T)}</td></tr>`).join('')+'</tbody>';
+}
+
+/* ---------- wiring ---------- */
+function setTr(v){ LV.tr=+v; $('tSl').value=LV.tr; document.querySelectorAll('[data-t]').forEach(b=>b.classList.toggle('primary',Math.abs(+b.dataset.t-LV.tr)<1e-9)); liveStats(); liveRead(); }
+$('tSl').addEventListener('input',e=>setTr(e.target.value));
+document.querySelectorAll('[data-t]').forEach(b=>b.onclick=()=>setTr(b.dataset.t));
+$('hSl').addEventListener('input',e=>{ LV.H=+e.target.value; liveStats(); liveRead(); });
+$('lSel').onchange=e=>{ LV.L=+e.target.value; liveReset('random'); liveRead(); };
+$('aSel').onchange=e=>{ LV.alg=e.target.value; liveStats(); liveRead(); };
+$('spf').onchange=e=>{ LV.spf=+e.target.value; };
+$('runB').onclick=()=>{ LV.running=!LV.running; $('runB').textContent=LV.running?'Pause':'Run'; };
+$('rnd').onclick=()=>{ liveReset('random'); }; $('allUp').onclick=()=>{ liveReset('up'); }; $('allDn').onclick=()=>{ liveReset('down'); };
+$('toy').addEventListener('click',e=>{ const r=e.currentTarget.getBoundingClientRect(), c=r.width/5, x=Math.floor((e.clientX-r.left)/c), y=Math.floor((e.clientY-r.top)/c); if (x>=0&&x<5&&y>=0&&y<5){ TOY.s[y*5+x]*=-1; toyDraw(); } });
+document.querySelectorAll('input[name=tj]').forEach(r=>r.onchange=e=>{ TOY.J=+e.target.value; toyDraw(); });
+$('tH').addEventListener('input',e=>{ TOY.H=+e.target.value; toyDraw(); });
+$('tUp').onclick=()=>{ TOY.s.fill(1); toyDraw(); };
+$('tRnd').onclick=()=>{ for (let i=0;i<25;i++) TOY.s[i]=Math.random()<0.5?1:-1; toyDraw(); };
+$('tChk').onclick=()=>{ for (let i=0;i<25;i++) TOY.s[i]=((i%5)+((i/5)|0))%2?-1:1; toyDraw(); };
+$('xL').onchange=e=>{ X.L=+e.target.value; runEnum(X.L); };
+document.querySelectorAll('input[name=xJ]').forEach(r=>r.onchange=e=>{ X.J=+e.target.value; drawEnum(); });
+let xr=0; ['xH','xT'].forEach(id=>$(id).addEventListener('input',()=>{ if (!xr) xr=requestAnimationFrame(()=>{ xr=0; drawEnum(); }); }));
+['nT','nH'].forEach(id=>$(id).addEventListener('input',drawNon));
+['bH','bT'].forEach(id=>$(id).addEventListener('input',drawRatio));
+$('demoSmall').onclick=()=>{ LV.L=8; $('lSel').value='8'; LV.alg='metro'; $('aSel').value='metro'; LV.H=0; $('hSl').value=0; LV.spf=16; $('spf').value='16'; liveReset('up'); setTr(0.95); window.scrollTo({top:0,behavior:'smooth'}); };
+$('run').onclick=()=>{ if (running){ running=false; $('run').textContent='Resume'; } else start(); };
+$('more').onclick=()=>{ BASE*=2; start(); };
+let rz=0;
+const ro=new ResizeObserver(()=>{ if (rz) return; rz=requestAnimationFrame(()=>{ rz=0; renderSpins(); liveCharts(); toyDraw(); drawEnum(); drawNon(); drawSweep(); }); });
+document.querySelectorAll('figure, .plate, #toy').forEach(el=>ro.observe(el));
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change',()=>{ readColors(); renderSpins(); toyDraw(); drawEnum(); drawNon(); drawSweep(); });
+
+readColors(); liveReset('random'); setTr(1); toyDraw(); drawNon(); drawRatio(); makeSweep(); drawSweep(); runEnum(4);
+requestAnimationFrame(liveFrame);
+setTimeout(start,500);
+})();
+</script>
+</body>
+</html>
