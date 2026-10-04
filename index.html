@@ -129,6 +129,12 @@ ol.refs li{margin-bottom:8px}
 .sl label{font-size:14px} .sl output{font-weight:600} .sl input{grid-column:1 / -1}
 .btns{display:flex; flex-wrap:wrap; gap:6px}
 .btns button{padding:4px 9px; font-size:13px}
+
+.rad{white-space:nowrap}
+.rad .rs{display:inline-block; transform:scale(1.05,1.22); transform-origin:100% 85%; margin-right:-0.05em}
+.rad .rc{display:inline-block; border-top:0.075em solid currentColor; padding:0.04em 0.12em 0 0.1em; line-height:1.1}
+.ss{display:inline-flex; flex-direction:column; vertical-align:0.5em; line-height:1; font-size:0.72em; margin-left:0.04em; margin-right:0.04em}
+.ss sup,.ss sub{font-size:1em; vertical-align:baseline; line-height:1.02; position:static}
 </style>
 </head>
 <body>
@@ -251,13 +257,13 @@ ol.refs li{margin-bottom:8px}
     <figure><figcaption><b>m(H) = tanh(H/T)</b>For T = 0.02 (blue), 0.5 (green), 1 (orange) and 2 (pink). As T → 0 it becomes a step: m = ±1 for H → 0<sup>±</sup>.</figcaption><canvas id="n1"></canvas></figure>
     <figure><figcaption><b>χ(H) = β sech²(βH)</b>For T = 0.5 (green), 1 (orange) and 2 (pink). At H = 0, χ = 1/T, which diverges only as T → 0.</figcaption><canvas id="n2"></canvas></figure>
     <figure><figcaption><b>Energy ε(T) and specific heat c(T) at the chosen H</b>ε = −H tanh(H/T) (blue) and c = (H/T)² sech²(H/T) (red).</figcaption><canvas id="n3"></canvas></figure>
-    <figure><figcaption><b>Distribution of m = M/N for N = 16 (orange), 256 (green) and 4 096 (blue)</b>At the chosen T and H. It narrows around tanh(βH) as N grows: relative fluctuations shrink as 1/√N.</figcaption><canvas id="n4"></canvas><p class="fit" id="n4t"></p></figure>
+    <figure><figcaption><b>Distribution of m = M/N for N = 16 (orange), 256 (green) and 4 096 (blue)</b>At the chosen T and H. It narrows around tanh(βH) as N grows: relative fluctuations shrink as 1/<span class="rad"><span class="rs">√</span><span class="rc">N.</span></span></figcaption><canvas id="n4"></canvas><p class="fit" id="n4t"></p></figure>
   </div>
 </section>
 
 <section>
   <h2>Quantities of interest near T<sub>c</sub></h2>
-  <p class="prose">Back to the interacting model at H = 0. On the square lattice Onsager’s exact solution puts the transition at k<sub>B</sub>T<sub>c</sub>/J = 2/ln(1 + √2) ≈ 2.269. The page simulates 16 × 16, 32 × 32 and 64 × 64 lattices with the Wolff cluster algorithm at temperatures across T<sub>c</sub>, and compares them with the exact infinite-lattice results. As in percolation, the singular behavior is described by power laws:</p>
+  <p class="prose">Back to the interacting model at H = 0. On the square lattice Onsager’s exact solution puts the transition at k<sub>B</sub>T<sub>c</sub>/J = 2/ln(1 + <span class="rad"><span class="rs">√</span><span class="rc">2</span></span>) ≈ 2.269. The page simulates 16 × 16, 32 × 32 and 64 × 64 lattices with the Wolff cluster algorithm at temperatures across T<sub>c</sub>, and compares them with the exact infinite-lattice results. As in percolation, the singular behavior is described by power laws:</p>
   <div class="tbl"><table aria-label="Critical exponents">
     <thead><tr><th>Exponent</th><th>Definition</th><th style="text-align:right">2D Ising (exact)</th><th style="text-align:right">Mean field</th><th style="text-align:right">2D percolation</th><th style="text-align:right">This run</th></tr></thead>
     <tbody id="expBody"></tbody></table></div>
@@ -333,6 +339,22 @@ function linReg(xs,ys){
   return {slope,icpt,se};
 }
 
+function richParts(s){ const out=[]; let i=0, buf=''; const push=(t,m)=>{ if (t) out.push({t,m}); };
+  while (i<s.length){ const ch=s[i];
+    if ((ch==='_'||ch==='^') && i+1<s.length){ push(buf,0); buf=''; const m=ch==='_'?1:2; let t;
+      if (s[i+1]==='{'){ const j=s.indexOf('}',i+2); t=s.slice(i+2,j<0?s.length:j); i=j<0?s.length:j+1; }
+      else { t=String.fromCodePoint(s.codePointAt(i+1)); i+=1+t.length; }
+      push(t,m); }
+    else { buf+=ch; i++; } }
+  push(buf,0); return out; }
+function drawRich(ctx,s,x,y){
+  const parts=richParts(String(s)); if (parts.length===1 && parts[0].m===0){ ctx.fillText(s,x,y); return; }
+  const font=ctx.font, mm=font.match(/(\d+(?:\.\d+)?)px/), px=mm?+mm[1]:11, small=font.replace(/(\d+(?:\.\d+)?)px/,(px*0.72).toFixed(1)+'px'), al=ctx.textAlign;
+  let w=0; parts.forEach(p=>{ ctx.font=p.m?small:font; p.w=ctx.measureText(p.t).width; w+=p.w; });
+  let x0= al==='center' ? x-w/2 : (al==='right'||al==='end') ? x-w : x;
+  ctx.textAlign='left';
+  parts.forEach(p=>{ ctx.font=p.m?small:font; ctx.fillText(p.t,x0,y+(p.m===1?px*0.32:p.m===2?-px*0.38:0)); x0+=p.w; });
+  ctx.textAlign=al; ctx.font=font; }
 /* ---------- plotting ---------- */
 const SUP={'-':'⁻','0':'⁰','1':'¹','2':'²','3':'³','4':'⁴','5':'⁵','6':'⁶','7':'⁷','8':'⁸','9':'⁹'};
 const supNum = n => String(n).split('').map(c=>SUP[c]||c).join('');
@@ -384,7 +406,7 @@ function plot(cv,o){
   ticks(y0,y1,o.logy).forEach(([v,l])=>{ const py=Math.round(Y(v))+.5; ctx.beginPath(); ctx.moveTo(m.l,py); ctx.lineTo(m.l+pw,py); ctx.stroke(); ctx.fillText(l,m.l-6,py); });
   ctx.strokeStyle=C.rule; ctx.strokeRect(m.l+.5,m.t+.5,pw-1,ph-1);
   ctx.save(); ctx.beginPath(); ctx.rect(m.l,m.t,pw,ph); ctx.clip();
-  (o.vlines||[]).forEach(v=>{ if (v.x<x0||v.x>x1) return; ctx.strokeStyle=v.color; ctx.lineWidth=v.width||1; ctx.setLineDash(v.dash||[]); const px=X(v.x); ctx.beginPath(); ctx.moveTo(px,m.t); ctx.lineTo(px,m.t+ph); ctx.stroke(); ctx.setLineDash([]); if (v.label){ ctx.fillStyle=v.color; ctx.textAlign='left'; ctx.textBaseline='top'; ctx.fillText(v.label,px+4,m.t+4); } });
+  (o.vlines||[]).forEach(v=>{ if (v.x<x0||v.x>x1) return; ctx.strokeStyle=v.color; ctx.lineWidth=v.width||1; ctx.setLineDash(v.dash||[]); const px=X(v.x); ctx.beginPath(); ctx.moveTo(px,m.t); ctx.lineTo(px,m.t+ph); ctx.stroke(); ctx.setLineDash([]); if (v.label){ ctx.fillStyle=v.color; ctx.textAlign='left'; ctx.textBaseline='top'; drawRich(ctx,v.label,px+4,m.t+4); } });
   series.forEach(s=>{
     ctx.strokeStyle=s.color; ctx.fillStyle=s.color; ctx.lineWidth=s.width||1.6; ctx.setLineDash(s.dash||[]); ctx.globalAlpha=s.alpha||1;
     if (s.dots){ s.pts.forEach(p=>{ if (!isFinite(p[1])||(o.logy&&p[1]<=0)) return; ctx.beginPath(); ctx.arc(X(p[0]),Y(p[1]),s.r||4,0,7); ctx.fill(); }); }
@@ -393,8 +415,8 @@ function plot(cv,o){
   });
   ctx.restore();
   ctx.fillStyle=C.muted; ctx.textAlign='center'; ctx.textBaseline='bottom';
-  if (o.xlabel) ctx.fillText(o.xlabel, m.l+pw/2, H-1);
-  if (o.ylabel){ ctx.save(); ctx.translate(11,m.t+ph/2); ctx.rotate(-Math.PI/2); ctx.textBaseline='middle'; ctx.fillText(o.ylabel,0,0); ctx.restore(); }
+  if (o.xlabel) drawRich(ctx,o.xlabel, m.l+pw/2, H-1);
+  if (o.ylabel){ ctx.save(); ctx.translate(11,m.t+ph/2); ctx.rotate(-Math.PI/2); ctx.textBaseline='middle'; drawRich(ctx,o.ylabel,0,0); ctx.restore(); }
 }
 
 
@@ -539,7 +561,7 @@ function drawEnum(){
   const L=X.L, J=X.J, H=+$('xH').value, Tf=+$('xT').value; $('xHo').textContent=H.toFixed(2); $('xTo').textContent=Tf.toFixed(2);
   if (!ENUM[L]) return;
   const d=0.002, rows=TGRID.map(T=>{ const a=thermo(L,T,H,J), hp=thermo(L,T,H+d,J), hm=thermo(L,T,H-d,J), tp=thermo(L,T+d,H,J), tm=thermo(L,T-d,H,J); return {T,a,chiD:(hp.m-hm.m)/(2*d),cD:(tp.eps-tm.eps)/(2*d)}; });
-  const vl=[{x:TC,color:C.crit,dash:[4,4],label:'Tc (∞)'}];
+  const vl=[{x:TC,color:C.crit,dash:[4,4],label:'T_c (∞)'}];
   plot($('x1'),{x:[0,6],y:[-0.02,1.02],series:[{color:C.accent,width:2,pts:rows.map(r=>[r.T,r.a.m])},{color:C.l32,width:1.4,pts:rows.map(r=>[r.T,r.a.ma])},{color:C.ink,dash:[6,4],width:1.2,pts:rows.map(r=>[r.T,Math.tanh(H/r.T)])}],vlines:vl,xlabel:'T',ylabel:'m'});
   const sub=(arr)=>arr.filter((_,i)=>i%6===0);
   plot($('x2'),{x:[0,6],zeroY:true,series:[{color:C.accent,width:2,pts:rows.map(r=>[r.T,r.chiD])},{dots:true,r:3.5,color:C.crit,pts:sub(rows).map(r=>[r.T,r.a.chiF])}],vlines:vl,xlabel:'T',ylabel:'χ'});
@@ -566,7 +588,7 @@ function drawNon(){
   Ns.forEach(([N,c])=>{ const pts=[]; for (let n=0;n<=N;n++){ const lp=lnBinom(N,n)+n*Math.log(q)+(N-n)*Math.log(1-q); const p=Math.exp(lp); if (p<1e-9 && N>16) continue; pts.push([2*n/N-1,p*N/2]); } ser.push({color:c,width:1.8,pts}); });
   plot($('n4'),{x:[-1,1],zeroY:true,series:ser,vlines:[{x:Math.tanh(H/T),color:C.crit,dash:[4,4]}],xlabel:'m = M/N',ylabel:'probability density'});
   const rel=H>0?1/Math.sinh(H/T):Infinity;
-  $('n4t').innerHTML= H>0 ? `Relative fluctuation √(⟨M²⟩ − ⟨M⟩²)/⟨M⟩ = csch(βH)/√N: ${Ns.map(([N])=>`N = ${N}: <b>${(rel/Math.sqrt(N)).toFixed(3)}</b>`).join(', ')}.` : 'At H = 0, ⟨M⟩ = 0, so the relative fluctuation is undefined; the spread still shrinks as 1/√N.';
+  $('n4t').innerHTML= H>0 ? `Relative fluctuation <span class="rad"><span class="rs">√</span><span class="rc">⟨M²⟩ − ⟨M⟩²</span></span>/⟨M⟩ = csch(βH)/<span class="rad"><span class="rs">√</span><span class="rc">N</span></span>: ${Ns.map(([N])=>`N = ${N}: <b>${(rel/Math.sqrt(N)).toFixed(3)}</b>`).join(', ')}.` : 'At H = 0, ⟨M⟩ = 0, so the relative fluctuation is undefined; the spread still shrinks as 1/<span class="rad"><span class="rs">√</span><span class="rc">N.</span></span>';
 }
 
 /* ---------- temperature sweep with the Wolff algorithm ---------- */
@@ -593,18 +615,18 @@ function drawSweep(){
   SIZES.forEach(L=>{ const q=by(L), N=L*L, col=LCOL(L);
     const pa=q.map(s=>[s.r,s.a/s.cnt]), pc=q.map(s=>[s.r,N*(s.m2/s.cnt-(s.a/s.cnt)**2)/s.T]), ph=q.map(s=>[s.r,N*(s.e2/s.cnt-(s.e/s.cnt)**2)/(s.T*s.T)]), pe=q.map(s=>[s.r,s.e/s.cnt]);
     ser1.push({color:col,width:1.2,pts:pa},{dots:true,r:3.5,color:col,pts:pa}); ser2.push({color:col,width:1.2,pts:pc},{dots:true,r:3.5,color:col,pts:pc}); ser3.push({color:col,width:1.2,pts:ph},{dots:true,r:3.5,color:col,pts:ph}); ser4.push({dots:true,r:3.5,color:col,pts:pe}); });
-  const vl=[{x:1,color:C.crit,dash:[4,4],label:'Tc'}];
-  plot($('s1'),{x:[0.5,2.3],y:[-0.02,1.02],series:ser1,vlines:vl,xlabel:'T / Tc',ylabel:'⟨|m|⟩'});
-  plot($('s2'),{x:[0.5,2.3],zeroY:true,series:ser2,vlines:vl,xlabel:'T / Tc',ylabel:'χ'});
-  plot($('s3'),{x:[0.5,2.3],y:[0,3],series:ser3,vlines:vl,xlabel:'T / Tc',ylabel:'c'});
-  plot($('s4'),{x:[0.5,2.3],series:ser4,vlines:vl,xlabel:'T / Tc',ylabel:'ε'});
+  const vl=[{x:1,color:C.crit,dash:[4,4],label:'T_c'}];
+  plot($('s1'),{x:[0.5,2.3],y:[-0.02,1.02],series:ser1,vlines:vl,xlabel:'T / T_c',ylabel:'⟨|m|⟩'});
+  plot($('s2'),{x:[0.5,2.3],zeroY:true,series:ser2,vlines:vl,xlabel:'T / T_c',ylabel:'χ'});
+  plot($('s3'),{x:[0.5,2.3],y:[0,3],series:ser3,vlines:vl,xlabel:'T / T_c',ylabel:'c'});
+  plot($('s4'),{x:[0.5,2.3],series:ser4,vlines:vl,xlabel:'T / T_c',ylabel:'ε'});
   const at=SIZES.map(L=>sw.find(s=>s.L===L&&s.r===1)).filter(s=>s&&s.cnt>20);
   const pm=at.map(s=>[s.L,s.a/s.cnt]), px=at.map(s=>[s.L,s.L*s.L*(s.m2/s.cnt)/s.T]);
   const fm=pm.length>=2?linReg(pm.map(p=>Math.log(p[0])),pm.map(p=>Math.log(p[1]))):null, fx=px.length>=2?linReg(px.map(p=>Math.log(p[0])),px.map(p=>Math.log(p[1]))):null;
   const ser5=[{dots:true,r:5,color:C.accent,pts:pm},{dots:true,r:5,color:C.crit,pts:px}];
   if (fm) ser5.push({color:C.accent,dash:[6,4],width:1.2,pts:[12,90].map(L=>[L,Math.exp(fm.icpt+fm.slope*Math.log(L))])});
   if (fx) ser5.push({color:C.crit,dash:[6,4],width:1.2,pts:[12,90].map(L=>[L,Math.exp(fx.icpt+fx.slope*Math.log(L))])});
-  plot($('s5'),{x:[12,90],logx:true,logy:true,xticks:[16,32,64],series:ser5,xlabel:'L',ylabel:'⟨|m|⟩ and χ at Tc'});
+  plot($('s5'),{x:[12,90],logx:true,logy:true,xticks:[16,32,64],series:ser5,xlabel:'L',ylabel:'⟨|m|⟩ and χ at T_c'});
   R.bn=fm?-fm.slope:NaN; R.gn=fx?fx.slope:NaN;
   $('s5t').innerHTML=(fm?`β/ν ≈ <b>${R.bn.toFixed(3)}</b> <span style="color:var(--muted)">exact 1/8</span>`:'')+(fx?`, γ/ν ≈ <b>${R.gn.toFixed(3)}</b> <span style="color:var(--muted)">exact 7/4</span>`:'');
   const rows=[['α','c ∝ |T − T<sub>c</sub>|<sup>−α</sup>','0 (logarithmic)','0 (jump)','−2/3','–'],['β','m<sub>0</sub> ∝ (T<sub>c</sub> − T)<sup>β</sup>','1/8','1/2','5/36','–'],['γ','χ ∝ |T − T<sub>c</sub>|<sup>−γ</sup>','7/4','1','43/18','–'],['δ','m(T<sub>c</sub>, H) ∝ |H|<sup>1/δ</sup>','15','3','91/5','–'],['ν','ξ ∝ |T − T<sub>c</sub>|<sup>−ν</sup>','1','1/2','4/3','–'],['η','g(r) ∝ r<sup>−(d−2+η)</sup> at T<sub>c</sub>','1/4','0','5/24','–'],['β/ν','⟨|m|⟩ ∝ L<sup>−β/ν</sup> at T<sub>c</sub>','1/8','–','5/48',f3(R.bn)],['γ/ν','χ ∝ L<sup>γ/ν</sup> at T<sub>c</sub>','7/4','–','43/24',f3(R.gn)]];
