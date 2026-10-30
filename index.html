@@ -371,6 +371,20 @@ const SUP={'-':'⁻','0':'⁰','1':'¹','2':'²','3':'³','4':'⁴','5':'⁵','6
 const supNum = n => String(n).split('').map(c=>SUP[c]||c).join('');
 function niceStep(range,n){ const raw=range/n, p=Math.pow(10,Math.floor(Math.log10(raw))), f=raw/p; return (f<1.5?1:f<3?2:f<7?5:10)*p; }
 function fmtTick(v,step){ const dec=Math.max(0,-Math.floor(Math.log10(step)+1e-9)); return (Math.abs(v)<step/2?0:v).toFixed(Math.min(dec,4)); }
+/* Axis range guard: nearly constant data (e.g. J=0 free energy) can give a round-off span like 2e-16.
+   Enforce a minimum span relative to the data magnitude; also repair inverted / non-positive log ranges. */
+const MAX_TICKS=60;
+function safeRange(a,b,log){
+  if (log){
+    if (a>0 && b>a*(1+1e-7) && isFinite(b)) return [a,b];
+    const c = a>0&&isFinite(a) ? a : (b>0&&isFinite(b) ? b : 1);
+    return [c/2, c*2];
+  }
+  const mag=Math.max(Math.abs(a),Math.abs(b));
+  if (b-a > mag*1e-7) return [a,b];
+  const c=(a+b)/2, h= mag>0 ? mag*0.06 : 1;
+  return [c-h, c+h];
+}
 function plot(cv,o){
   const dpr=window.devicePixelRatio||1, W=cv.clientWidth, H=cv.clientHeight; if (!W||!H) return;
   const pw_=Math.round(W*dpr), ph_=Math.round(H*dpr); if (cv.width!==pw_||cv.height!==ph_){cv.width=pw_; cv.height=ph_;}
@@ -388,7 +402,8 @@ function plot(cv,o){
     if (o.logy){ y0/=1.3; y1*=1.3; } else { const pad=(y1-y0||1)*0.06; y0 = o.zeroY ? Math.min(0,y0) : y0-pad; y1+=pad; }
   }
   if (!isFinite(x0)||!isFinite(x1)){ x0=o.logx?1:0; x1=o.logx?10:1; }
-  if (x0===x1){x0-=1;x1+=1;}
+  if (!isFinite(y0)||!isFinite(y1)){ y0=o.logy?0.1:0; y1=o.logy?10:1; }
+  [x0,x1]=safeRange(x0,x1,o.logx); [y0,y1]=safeRange(y0,y1,o.logy);
   const X0=fx(x0),X1=fx(x1),Y0=fy(y0),Y1=fy(y1);
   const X=v=>m.l+(fx(v)-X0)/(X1-X0)*pw, Y=v=>m.t+ph-(fy(v)-Y0)/(Y1-Y0)*ph;
   cv._inv = px => { const t=(px-m.l)/pw; const v=X0+t*(X1-X0); return o.logx?Math.pow(10,v):v; };
@@ -405,8 +420,12 @@ function plot(cv,o){
       return out;
     }
     const st=niceStep(hi-lo,5), out=[];
-    if (!(st>0)||!isFinite(lo)||!isFinite(hi)) return out;
-    for (let v=Math.ceil(lo/st)*st; v<=hi+st*1e-6; v+=st) out.push([v,fmtTick(v,st)]);
+    if (!(st>0)||!isFinite(st)||!isFinite(lo)||!isFinite(hi)||!(hi>lo)) return out;
+    // integer tick index with a hard cap: never loop on v+=st (v+st===v when st << |v|)
+    const i0=Math.ceil(lo/st-1e-9), i1=Math.floor(hi/st+1e-6);
+    if (!isFinite(i0)||!isFinite(i1)||i1-i0>MAX_TICKS) return out;
+    let prev=-Infinity;
+    for (let i=i0;i<=i1;i++){ const v=i*st; if (!(v>prev)) break; prev=v; out.push([v,fmtTick(v,st)]); }
     return out;
   }
   ctx.fillStyle=C.panel; ctx.fillRect(m.l,m.t,pw,ph);
@@ -463,9 +482,24 @@ function measure(s,L,H){ let M=0, B=0; for (let y=0;y<L;y++){ const row=y*L, dn=
 /* ---------- live lattice ---------- */
 const LV={L:128,tr:1,H:0,alg:'metro',spf:0.25,running:true};
 let LS=null, stackLive=null;
-function liveReset(kind){ LS={s:mkLattice(LV.L,kind),sweeps:0,ts:[],hist:new Float64Array(81),hn:0,corr:new Float64Array(LV.L/2+1),cn:0,mabs:0,mn:0,frame:0}; stackLive=new Int32Array(LV.L*LV.L); }
+function liveReset(kind){ LS={s:mkLattice(LV.L,kind),sweeps:0,ts:[],hist:new Float64Array(81),hn:0,corr:new Float64Array(LV.L/2+1),cn:0,mabs:0,mn:0,frame:0}; stackLive=new Int32Array(LV.L*LV.L); if (!LV.running && C.panel){ renderSpins(); liveCharts(); } }
 function liveStats(){ LS.sweeps=0; LS.ts=[]; LS.hist.fill(0); LS.hn=0; LS.corr=new Float64Array(LV.L/2+1); LS.cn=0; LS.mabs=0; LS.mn=0; }
-function corrAccum(){ const s=LS.s, L=LV.L, R=L/2; for (let r=0;r<=R;r++){ let a=0; for (let y=0;y<L;y++){ const row=y*L, row2=((y+r)%L)*L; for (let x=0;x<L;x++){ const sp=s[row+x]; a+=sp*(s[row+(x+r)%L]+s[row2+x]); } } LS.corr[r]+=a/(2*L*L); } LS.cn++; }
+/* g(r) along the lattice axes, Σ_x,y s(x,y)[s(x+r,y) + s(x,y+r)] for every r = 0…L/2 at once. The direct double
+   loop costs O(N·L) = O(N^(3/2)); here the power spectra |FFT|² of all rows and all columns are summed and
+   transformed back once (Wiener–Khinchin, circular = periodic boundaries), O(N log L), same values to round-off. */
+let FT=null;
+function fftPlan(L){ if (FT&&FT.L===L) return FT; const lg=Math.round(Math.log2(L)), rev=new Uint32Array(L), cs=new Float64Array(L/2), sn=new Float64Array(L/2);
+  for (let i=0;i<L;i++){ let r=0; for (let b=0;b<lg;b++) r|=((i>>b)&1)<<(lg-1-b); rev[i]=r; }
+  for (let k=0;k<L/2;k++){ cs[k]=Math.cos(2*Math.PI*k/L); sn[k]=-Math.sin(2*Math.PI*k/L); }
+  return FT={L,rev,cs,sn,re:new Float64Array(L),im:new Float64Array(L),pw:new Float64Array(L)}; }
+function fft(re,im,P){ const L=P.L;   // in-place radix-2, L a power of two
+  for (let i=0;i<L;i++){ const j=P.rev[i]; if (j>i){ let t=re[i]; re[i]=re[j]; re[j]=t; t=im[i]; im[i]=im[j]; im[j]=t; } }
+  for (let size=2;size<=L;size<<=1){ const h=size>>1, st=L/size; for (let i=0;i<L;i+=size) for (let k=0;k<h;k++){ const wr=P.cs[k*st], wi=P.sn[k*st], a=i+k, b=a+h, xr=re[b]*wr-im[b]*wi, xi=re[b]*wi+im[b]*wr; re[b]=re[a]-xr; im[b]=im[a]-xi; re[a]+=xr; im[a]+=xi; } } }
+function corrAccum(){ const s=LS.s, L=LV.L, R=L/2, P=fftPlan(L), re=P.re, im=P.im, pw=P.pw; pw.fill(0);
+  for (let y=0;y<L;y++){ for (let x=0;x<L;x++){ re[x]=s[y*L+x]; im[x]=0; } fft(re,im,P); for (let k=0;k<L;k++) pw[k]+=re[k]*re[k]+im[k]*im[k]; }
+  for (let x=0;x<L;x++){ for (let y=0;y<L;y++){ re[y]=s[y*L+x]; im[y]=0; } fft(re,im,P); for (let k=0;k<L;k++) pw[k]+=re[k]*re[k]+im[k]*im[k]; }
+  for (let k=0;k<L;k++){ re[k]=pw[k]; im[k]=0; } fft(re,im,P);   // pw is real and even, so the forward FFT equals L × the inverse
+  for (let r=0;r<=R;r++) LS.corr[r]+=re[r]/L/(2*L*L); LS.cn++; }
 let off=null, img=null;
 function renderSpins(){
   const cv=$('spin'), L=LV.L, dpr=window.devicePixelRatio||1, w=Math.max(1,Math.round(cv.clientWidth*dpr)); if (cv.width!==w){ cv.width=w; cv.height=w; }
@@ -485,8 +519,17 @@ function liveCharts(){
   if (g.length) ser.push({color:C.ink,dash:[6,4],width:1.2,noScale:true,pts:[1,LV.L/2].map(r=>[r,g[0][1]*Math.pow(r,-0.25)])});
   plot($('gC'),{logx:true,logy:true,series:ser,xlabel:'distance r',ylabel:'g(r)'});
 }
+/* The live lattice runs only while the user wants it running (LV.running), its figures are on screen and the tab
+   is visible; otherwise no frame is scheduled. prefers-reduced-motion pauses at load and whenever it is switched
+   on later; switching it off does not auto-start (the user presses Run). */
+const RM=matchMedia('(prefers-reduced-motion: reduce)'), onScreen=new Map();
+let raf=0;
+const active=()=>LV.running && !document.hidden && (!onScreen.size || [...onScreen.values()].some(Boolean));
+function kick(){ if (!raf && active()){ LV.acc=0; raf=requestAnimationFrame(liveFrame); } }
+function setRun(on){ LV.running=on; $('runB').textContent=on?'Pause':'Run'; kick(); }
 function liveFrame(){
-  if (LV.running && LS && (LV.acc=(LV.acc||0)+LV.spf)>=1){
+  raf=0; if (!active()) return;
+  if (LS && (LV.acc=(LV.acc||0)+LV.spf)>=1){
     const T=LV.tr*TC, useW=LV.alg==='wolff'&&LV.H===0, nS=Math.floor(LV.acc); LV.acc-=nS;
     for (let k=0;k<nS;k++){ if (useW) wolffSweep(LS.s,LV.L,T,stackLive); else metroSweep(LS.s,LV.L,T,LV.H); LS.sweeps++; }
     const q=measure(LS.s,LV.L,LV.H); LS.q=q;
@@ -495,7 +538,7 @@ function liveFrame(){
     LS.frame++; if (LS.frame % Math.max(1,LV.L/32)===0) corrAccum();
     renderSpins(); liveCharts(); liveRead();
   }
-  requestAnimationFrame(liveFrame);
+  raf=requestAnimationFrame(liveFrame);
 }
 function liveRead(){
   const T=LV.tr*TC; $('tOut').textContent=LV.tr.toFixed(3); $('hOut').textContent=LV.H.toFixed(2);
@@ -661,7 +704,11 @@ $('hSl').addEventListener('input',e=>{ LV.H=+e.target.value; liveStats(); liveRe
 $('lSel').onchange=e=>{ LV.L=+e.target.value; liveReset('random'); liveRead(); };
 $('aSel').onchange=e=>{ LV.alg=e.target.value; liveStats(); liveRead(); };
 $('spf').onchange=e=>{ LV.spf=+e.target.value; };
-$('runB').onclick=()=>{ LV.running=!LV.running; $('runB').textContent=LV.running?'Pause':'Run'; };
+$('runB').onclick=()=>setRun(!LV.running);
+const io=new IntersectionObserver(es=>{ es.forEach(e=>onScreen.set(e.target,e.isIntersecting)); kick(); });
+['spin','tsC','hiC','gC'].forEach(id=>io.observe($(id)));
+document.addEventListener('visibilitychange',kick);
+RM.addEventListener('change',e=>{ if (e.matches) setRun(false); });
 $('rnd').onclick=()=>{ liveReset('random'); }; $('allUp').onclick=()=>{ liveReset('up'); }; $('allDn').onclick=()=>{ liveReset('down'); };
 $('toy').addEventListener('click',e=>{ const r=e.currentTarget.getBoundingClientRect(), c=r.width/5, x=Math.floor((e.clientX-r.left)/c), y=Math.floor((e.clientY-r.top)/c); if (x>=0&&x<5&&y>=0&&y<5){ TOY.s[y*5+x]*=-1; toyDraw(); } });
 document.querySelectorAll('input[name=tj]').forEach(r=>r.onchange=e=>{ TOY.J=+e.target.value; toyDraw(); });
@@ -684,7 +731,7 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change',()=>{ readC
 new MutationObserver(()=>{ readColors(); renderSpins(); toyDraw(); drawEnum(); drawNon(); drawSweep(); }).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
 
 readColors(); liveReset('random'); setTr(1); toyDraw(); drawNon(); drawRatio(); makeSweep(); drawSweep(); runEnum(4);
-requestAnimationFrame(liveFrame);
+if (RM.matches){ setRun(false); renderSpins(); liveCharts(); liveRead(); } else kick();
 setTimeout(start,500);
 })();
 </script>
