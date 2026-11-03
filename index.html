@@ -205,7 +205,8 @@ button.theme-btn svg{width:20px; height:20px; fill:none; stroke:currentColor; st
   <div class="eq">E<sub>{s<sub>i</sub>}</sub> = −J Σ<sub>⟨ij⟩</sub> s<sub>i</sub>s<sub>j</sub> − H Σ<sub>i</sub> s<sub>i</sub></div>
   <p class="prose">The first sum runs over distinct nearest-neighbor pairs. For J &gt; 0 parallel spins are favored, a ferromagnet; for J &lt; 0 antiparallel ones, an antiferromagnet. Click spins below to flip them. Even this 5 × 5 lattice has 2<sup>25</sup> = 33 554 432 microstates, while a macrostate such as “14 up and 11 down” lumps many of them together.</p>
   <div class="two2">
-    <div><canvas id="toy" aria-label="5 by 5 Ising lattice; click a spin to flip it"></canvas>
+    <div><canvas id="toy" tabindex="0" aria-label="5 by 5 Ising lattice; click a spin to flip it, or use the arrow keys to move the cursor and Enter or Space to flip the selected spin" aria-describedby="toyCur"></canvas>
+      <p class="plate-note" id="toyCur" aria-live="polite"></p>
       <p class="plate-note">Free boundaries, 40 nearest-neighbor pairs. Blue bonds lower the energy and red bonds raise it: for J &gt; 0 blue joins parallel spins, for J &lt; 0 antiparallel ones.</p></div>
     <div>
       <fieldset style="margin-bottom:12px"><legend>Coupling</legend><div class="seg"><label><input type="radio" name="tj" value="1" checked><span>J = +1, ferromagnet</span></label><label><input type="radio" name="tj" value="-1"><span>J = −1, antiferromagnet</span></label></div></fieldset>
@@ -274,7 +275,7 @@ button.theme-btn svg{width:20px; height:20px; fill:none; stroke:currentColor; st
 
 <section>
   <h2>Quantities of interest near T<sub>c</sub></h2>
-  <p class="prose">Back to the interacting model at H = 0. On the square lattice Onsager’s exact solution puts the transition at k<sub>B</sub>T<sub>c</sub>/J = 2/ln(1 + <span class="rad"><span class="rs">√</span><span class="rc">2</span></span>) ≈ 2.269. The page simulates 16 × 16, 32 × 32 and 64 × 64 lattices with the Wolff cluster algorithm at temperatures across T<sub>c</sub>, and compares them with the exact infinite-lattice results. As in percolation, the singular behavior is described by power laws:</p>
+  <p class="prose">Back to the interacting model at H = 0. On the square lattice Onsager’s exact solution puts the transition at k<sub>B</sub>T<sub>c</sub>/J = 2/ln(1 + <span class="rad"><span class="rs">√</span><span class="rc">2</span></span>) ≈ 2.269. The page simulates 16 × 16, 32 × 32 and 64 × 64 lattices with the Wolff cluster algorithm at temperatures across T<sub>c</sub> (each measurement after a fixed number of cluster updates, ≈ N/⟨C⟩ calibrated during equilibration, so that the measurement time does not depend on the state), and compares them with the exact infinite-lattice results. As in percolation, the singular behavior is described by power laws:</p>
   <div class="tbl"><table aria-label="Critical exponents">
     <thead><tr><th>Exponent</th><th>Definition</th><th style="text-align:right">2D Ising (exact)</th><th style="text-align:right">Mean field</th><th style="text-align:right">2D percolation</th><th style="text-align:right">This run</th></tr></thead>
     <tbody id="expBody"></tbody></table></div>
@@ -476,14 +477,21 @@ function wolffFlip(s,L,padd,stack){
     if (s[nb3]===sp && Math.random()<padd){ s[nb3]=-sp; stack[top++]=nb3; c++; } }
   return c;
 }
-function wolffSweep(s,L,T,stack){ const N=L*L, padd=1-Math.exp(-2/T); let f=0; while (f<N) f+=wolffFlip(s,L,padd,stack); }
+/* Wolff measurements are taken after a FIXED number k of cluster updates. Stopping once the flipped sites add up to N
+   makes the measurement time depend on the state and biases the averages (4 × 4 at T_c: ε = −1.760 instead of the exact
+   −1.5656). wolffSweep (flip until N sites have flipped) is therefore used only to equilibrate and to calibrate
+   k ≈ N/⟨C⟩ for the current (L, T); k is then frozen, and the flipped sites / N are kept only as a work clock. */
+function wolffSweep(s,L,T,stack){ const N=L*L, padd=1-Math.exp(-2/T); let f=0, c=0; while (f<N){ f+=wolffFlip(s,L,padd,stack); c++; } return c; }
+function wolffUpdates(s,L,T,stack,k){ const padd=1-Math.exp(-2/T); let f=0; for (let i=0;i<k;i++) f+=wolffFlip(s,L,padd,stack); return f; }
 function measure(s,L,H){ let M=0, B=0; for (let y=0;y<L;y++){ const row=y*L, dn=((y+1)%L)*L; for (let x=0;x<L;x++){ const sp=s[row+x]; M+=sp; B+=sp*(s[row+(x+1)%L]+s[dn+x]); } } const N=L*L; return {m:M/N, e:(-B-H*M)/N}; }
 
 /* ---------- live lattice ---------- */
 const LV={L:128,tr:1,H:0,alg:'metro',spf:0.25,running:true};
 let LS=null, stackLive=null;
-function liveReset(kind){ LS={s:mkLattice(LV.L,kind),sweeps:0,ts:[],hist:new Float64Array(81),hn:0,corr:new Float64Array(LV.L/2+1),cn:0,mabs:0,mn:0,frame:0}; stackLive=new Int32Array(LV.L*LV.L); if (!LV.running && C.panel){ renderSpins(); liveCharts(); } }
-function liveStats(){ LS.sweeps=0; LS.ts=[]; LS.hist.fill(0); LS.hn=0; LS.corr=new Float64Array(LV.L/2+1); LS.cn=0; LS.mabs=0; LS.mn=0; }
+/* Instantaneous m and ε (LS.q) are recomputed from the current lattice and H whenever it or the field changes, also while
+   paused; the time averages are cleared and shown as '–' until the first new measurement. */
+function liveReset(kind){ LS={s:mkLattice(LV.L,kind),sweeps:0,ts:[],hist:new Float64Array(81),hn:0,corr:new Float64Array(LV.L/2+1),cn:0,mabs:0,mn:0,frame:0,wk:0,flips:0}; LS.q=measure(LS.s,LV.L,LV.H); stackLive=new Int32Array(LV.L*LV.L); if (!LV.running && C.panel){ renderSpins(); liveCharts(); liveRead(); } }
+function liveStats(){ LS.sweeps=0; LS.ts=[]; LS.hist.fill(0); LS.hn=0; LS.corr=new Float64Array(LV.L/2+1); LS.cn=0; LS.mabs=0; LS.mn=0; LS.wk=0; LS.flips=0; LS.q=measure(LS.s,LV.L,LV.H); if (!LV.running && C.panel) liveCharts(); }
 /* g(r) along the lattice axes, Σ_x,y s(x,y)[s(x+r,y) + s(x,y+r)] for every r = 0…L/2 at once. The direct double
    loop costs O(N·L) = O(N^(3/2)); here the power spectra |FFT|² of all rows and all columns are summed and
    transformed back once (Wiener–Khinchin, circular = periodic boundaries), O(N log L), same values to round-off. */
@@ -531,7 +539,8 @@ function liveFrame(){
   raf=0; if (!active()) return;
   if (LS && (LV.acc=(LV.acc||0)+LV.spf)>=1){
     const T=LV.tr*TC, useW=LV.alg==='wolff'&&LV.H===0, nS=Math.floor(LV.acc); LV.acc-=nS;
-    for (let k=0;k<nS;k++){ if (useW) wolffSweep(LS.s,LV.L,T,stackLive); else metroSweep(LS.s,LV.L,T,LV.H); LS.sweeps++; }
+    if (useW && !LS.wk){ let c=0; for (let k=0;k<5;k++) c+=wolffSweep(LS.s,LV.L,T,stackLive); LS.wk=Math.max(1,Math.round(c/5)); }   // calibrate k, not measured
+    for (let k=0;k<nS;k++){ if (useW) LS.flips+=wolffUpdates(LS.s,LV.L,T,stackLive,LS.wk); else metroSweep(LS.s,LV.L,T,LV.H); LS.sweeps++; }
     const q=measure(LS.s,LV.L,LV.H); LS.q=q;
     LS.ts.push(q.m); if (LS.ts.length>600) LS.ts.shift();
     LS.hist[Math.min(80,Math.max(0,Math.round((q.m+1)*40)))]++; LS.hn++; LS.mabs+=Math.abs(q.m); LS.mn++;
@@ -543,13 +552,14 @@ function liveFrame(){
 function liveRead(){
   const T=LV.tr*TC; $('tOut').textContent=LV.tr.toFixed(3); $('hOut').textContent=LV.H.toFixed(2);
   $('rT').textContent=T.toFixed(3); $('rM0').textContent= T<TC ? '±'+m0(T).toFixed(4) : '0';
-  if (LS && LS.q){ $('rM').textContent=LS.q.m.toFixed(4); $('rE').textContent=LS.q.e.toFixed(4); $('rMa').textContent=(LS.mabs/LS.mn).toFixed(4); }
-  $('rSw').textContent=LS?LS.sweeps:0;
+  if (LS && LS.q){ $('rM').textContent=LS.q.m.toFixed(4); $('rE').textContent=LS.q.e.toFixed(4); }
+  $('rMa').textContent= LS && LS.mn ? (LS.mabs/LS.mn).toFixed(4) : '– (no measurement yet)';
+  $('rSw').textContent= !LS ? 0 : LS.wk && LS.flips ? `${LS.sweeps} × ${LS.wk} clusters (${(LS.flips/(LV.L*LV.L)).toFixed(1)} N flipped)` : LS.sweeps;
   $('spinNote').textContent=`Up spins are white and down spins are black, as in the lecture notes. ${LV.L} × ${LV.L}, periodic boundaries.${LV.alg==='wolff'&&LV.H!==0?' The Wolff rule needs H = 0, so Metropolis is used while the field is on.':''}`;
 }
 
 /* ---------- toy 5 x 5 lattice ---------- */
-const TOY={L:5,J:1,H:0,s:new Int8Array(25)};
+const TOY={L:5,J:1,H:0,s:new Int8Array(25),cur:0};   // cur: keyboard cursor (site index)
 (function(){ const pat='+++--++-+-++-+--+-++--+++'; for (let i=0;i<25;i++) TOY.s[i]=pat[i]==='+'?1:-1; })();
 function toyDraw(){
   const cv=$('toy'), dpr=window.devicePixelRatio||1, W=cv.clientWidth; if (!W) return; const w=Math.round(W*dpr); if (cv.width!==w){ cv.width=w; cv.height=w; }
@@ -563,6 +573,8 @@ function toyDraw(){
   for (let i=0;i<25;i++){ const x=i%L, y=(i/L)|0; const sp=s[i]; if (sp>0) up++; M+=sp;
     ctx.fillStyle= sp>0 ? C.panel : C.ink; ctx.strokeStyle=C.ink; ctx.lineWidth=1.5; ctx.beginPath(); ctx.arc((x+0.5)*c,(y+0.5)*c,c*0.27,0,7); ctx.fill(); ctx.stroke();
     ctx.fillStyle= sp>0 ? C.ink : C.panel; ctx.fillText(sp>0?'↑':'↓',(x+0.5)*c,(y+0.52)*c); }
+  if (document.activeElement===cv){ const x=TOY.cur%L, y=(TOY.cur/L)|0; ctx.strokeStyle=C.accent; ctx.lineWidth=3; ctx.strokeRect(x*c+3,y*c+3,c-6,c-6); }
+  $('toyCur').textContent=`Selected spin: row ${((TOY.cur/L)|0)+1}, column ${TOY.cur%L+1}, ${s[TOY.cur]>0?'up':'down'}.`;
   const Eint=-TOY.J*(sat-uns), Eext=-TOY.H*M;
   $('tHo').textContent=TOY.H.toFixed(1);
   $('toyRead').innerHTML=`<dt>Up spins / down spins</dt><dd>${up} / ${25-up}</dd><dt>Total magnetization M = Σ s<sub>i</sub></dt><dd>${M}</dd><dt>Parallel / antiparallel pairs</dt><dd>${sat} / ${uns}</dd><dt>E<sub>int</sub> = −J Σ s<sub>i</sub>s<sub>j</sub></dt><dd>${Eint.toFixed(1)}</dd><dt>E<sub>ext</sub> = −H Σ s<sub>i</sub></dt><dd>${Eext.toFixed(1)}</dd><dt>Total energy E</dt><dd>${(Eint+Eext).toFixed(1)}</dd><dt>${TOY.J>0?'Energy with all spins along the field':'Energy of the checkerboard (best for small H)'}</dt><dd>${(-40-Math.abs(TOY.H)*(TOY.J>0?25:1)).toFixed(1)}</dd>`;
@@ -638,8 +650,10 @@ function drawNon(){
   plot($('n2'),{x:[-3,3],y:[0,2.2],series:Ts.slice(1).map(([t,c])=>({color:c,width:1.6,pts:HG.map(h=>[h,sech(h/t)**2/t])})),xlabel:'H',ylabel:'χ'});
   const TG=Array.from({length:300},(_,i)=>0.005+i*Math.max(2,10*H)/299);
   plot($('n3'),{x:[0,Math.max(2,10*H)],series:[{color:C.accent,width:2,pts:TG.map(t=>[t,-H*Math.tanh(H/t)])},{color:C.crit,width:2,pts:TG.map(t=>[t,(H/t)**2*sech(H/t)**2])}],xlabel:'T',ylabel:'ε (blue), c (red)'});
-  const q=Math.exp(H/T)/(2*Math.cosh(H/T)), ser=[], Ns=[[16,C.l16],[256,C.l64],[4096,C.accent]];
-  Ns.forEach(([N,c])=>{ const pts=[]; for (let n=0;n<=N;n++){ const lp=lnBinom(N,n)+n*Math.log(q)+(N-n)*Math.log(1-q); const p=Math.exp(lp); if (p<1e-9 && N>16) continue; pts.push([2*n/N-1,p*N/2]); } ser.push({color:c,width:1.8,pts}); });
+  /* ln q and ln(1 − q) for q = e^{βH}/(2 cosh βH), computed directly as −softplus(∓2βH): forming q first rounds it to 1
+     for strong fields (T = 0.1, H = 2), and 0·ln 0 then gives NaN for every point. */
+  const sp=x=>Math.max(x,0)+Math.log1p(Math.exp(-Math.abs(x))), lq=-sp(-2*H/T), lq1=-sp(2*H/T), ser=[], Ns=[[16,C.l16],[256,C.l64],[4096,C.accent]];
+  Ns.forEach(([N,c])=>{ const pts=[]; for (let n=0;n<=N;n++){ const lp=lnBinom(N,n)+n*lq+(N-n)*lq1; const p=Math.exp(lp); if (p<1e-9 && N>16) continue; pts.push([2*n/N-1,p*N/2]); } ser.push({color:c,width:1.8,pts}); });
   plot($('n4'),{x:[-1,1],zeroY:true,series:ser,vlines:[{x:Math.tanh(H/T),color:C.crit,dash:[4,4]}],xlabel:'m = M/N',ylabel:'probability density'});
   const rel=H>0?1/Math.sinh(H/T):Infinity;
   $('n4t').innerHTML= H>0 ? `Relative fluctuation <span class="rad"><span class="rs">√</span><span class="rc">⟨M²⟩ − ⟨M⟩²</span></span>/⟨M⟩ = csch(βH)/<span class="rad"><span class="rs">√</span><span class="rc">N</span></span>: ${Ns.map(([N])=>`N = ${N}: <b>${(rel/Math.sqrt(N)).toFixed(3)}</b>`).join(', ')}.` : 'At H = 0, ⟨M⟩ = 0, so the relative fluctuation is undefined; the spread still shrinks as 1/<span class="rad"><span class="rs">√</span><span class="rc">N.</span></span>';
@@ -649,7 +663,7 @@ function drawNon(){
 const SIZES=[16,32,64], RATIOS=[0.6,0.7,0.8,0.85,0.9,0.93,0.95,0.97,0.98,0.99,1,1.01,1.02,1.03,1.05,1.07,1.1,1.15,1.2,1.3,1.5,1.8,2.2];
 const EQ=200; let BASE=1500, sw=[];
 function makeSweep(){ sw=[]; SIZES.forEach(L=>RATIOS.forEach(r=>sw.push({L,r,T:r*TC,s:mkLattice(L,r<1?'up':'random'),stack:new Int32Array(L*L),eq:0,cnt:0,a:0,m2:0,e:0,e2:0}))); }
-function swStep(st){ wolffSweep(st.s,st.L,st.T,st.stack); if (st.eq<EQ){ st.eq++; return; } const q=measure(st.s,st.L,0); const ma=Math.abs(q.m); st.a+=ma; st.m2+=q.m*q.m; st.e+=q.e; st.e2+=q.e*q.e; st.cnt++; }
+function swStep(st){ if (st.eq<EQ){ st.cl=(st.cl||0)+wolffSweep(st.s,st.L,st.T,st.stack); if (++st.eq===EQ) st.k=Math.max(1,Math.round(st.cl/EQ)); return; } wolffUpdates(st.s,st.L,st.T,st.stack,st.k); const q=measure(st.s,st.L,0); const ma=Math.abs(q.m); st.a+=ma; st.m2+=q.m*q.m; st.e+=q.e; st.e2+=q.e*q.e; st.cnt++; }
 let running=true, timer=null, lastRef=0;
 function pick(){ let b=null, br=1; sw.forEach(s=>{ const r=s.cnt/BASE; if (r<br){ br=r; b=s; } }); return b; }
 function work(){ timer=null; if (!running) return; const t0=performance.now(); let did=false;
@@ -710,7 +724,11 @@ const io=new IntersectionObserver(es=>{ es.forEach(e=>onScreen.set(e.target,e.is
 document.addEventListener('visibilitychange',kick);
 RM.addEventListener('change',e=>{ if (e.matches) setRun(false); });
 $('rnd').onclick=()=>{ liveReset('random'); }; $('allUp').onclick=()=>{ liveReset('up'); }; $('allDn').onclick=()=>{ liveReset('down'); };
-$('toy').addEventListener('click',e=>{ const r=e.currentTarget.getBoundingClientRect(), c=r.width/5, x=Math.floor((e.clientX-r.left)/c), y=Math.floor((e.clientY-r.top)/c); if (x>=0&&x<5&&y>=0&&y<5){ TOY.s[y*5+x]*=-1; toyDraw(); } });
+$('toy').addEventListener('click',e=>{ const r=e.currentTarget.getBoundingClientRect(), c=r.width/5, x=Math.floor((e.clientX-r.left)/c), y=Math.floor((e.clientY-r.top)/c); if (x>=0&&x<5&&y>=0&&y<5){ TOY.s[y*5+x]*=-1; TOY.cur=y*5+x; toyDraw(); } });
+$('toy').addEventListener('keydown',e=>{ const k={ArrowUp:[0,-1],ArrowDown:[0,1],ArrowLeft:[-1,0],ArrowRight:[1,0]}[e.key], x=TOY.cur%5, y=(TOY.cur/5)|0;
+  if (k){ e.preventDefault(); TOY.cur=Math.max(0,Math.min(4,y+k[1]))*5+Math.max(0,Math.min(4,x+k[0])); toyDraw(); }
+  else if (e.key==='Enter'||e.key===' '){ e.preventDefault(); TOY.s[TOY.cur]*=-1; toyDraw(); } });
+['focus','blur'].forEach(t=>$('toy').addEventListener(t,toyDraw));
 document.querySelectorAll('input[name=tj]').forEach(r=>r.onchange=e=>{ TOY.J=+e.target.value; toyDraw(); });
 $('tH').addEventListener('input',e=>{ TOY.H=+e.target.value; toyDraw(); });
 $('tUp').onclick=()=>{ TOY.s.fill(1); toyDraw(); };
@@ -722,7 +740,7 @@ let xr=0; ['xH','xT'].forEach(id=>$(id).addEventListener('input',()=>{ if (!xr) 
 ['nT','nH'].forEach(id=>$(id).addEventListener('input',drawNon));
 ['bH','bT'].forEach(id=>$(id).addEventListener('input',drawRatio));
 $('demoSmall').onclick=()=>{ LV.L=8; $('lSel').value='8'; LV.alg='metro'; $('aSel').value='metro'; LV.H=0; $('hSl').value=0; LV.spf=16; $('spf').value='16'; liveReset('up'); setTr(0.95); window.scrollTo({top:0,behavior:'smooth'}); };
-$('run').onclick=()=>{ if (running){ running=false; $('run').textContent='Resume'; } else start(); };
+$('run').onclick=()=>{ if (running){ running=false; $('run').textContent='Resume'; $('stTxt').textContent=pick()?'Paused':'Done'; } else { start(); $('stTxt').textContent=pick()?'Sampling…':'Done'; } };
 $('more').onclick=()=>{ BASE*=2; start(); };
 let rz=0;
 const ro=new ResizeObserver(()=>{ if (rz) return; rz=requestAnimationFrame(()=>{ rz=0; renderSpins(); liveCharts(); toyDraw(); drawEnum(); drawNon(); drawSweep(); }); });
