@@ -2,6 +2,24 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
+<!-- lang-toggle:head -->
+<script>(function(){var l='en';try{if(localStorage.getItem('lshlj82-demo-lang')==='ko')l='ko'}catch(e){}window.LANG=l;document.documentElement.dataset.lang=l;window.tr=function(en,ko){return window.LANG==='ko'&&ko!=null?ko:en};})();</script>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap">
+<style>
+#langBtn{position:fixed;z-index:21;top:calc(env(safe-area-inset-top,0px) + 12px);right:calc(env(safe-area-inset-right,0px) + 60px);
+  min-width:40px;height:40px;padding:0 10px;border-radius:20px;display:grid;place-items:center;cursor:pointer;font:600 14px/1 system-ui,-apple-system,"Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR",sans-serif;
+  background:var(--lb-bg,rgba(255,255,255,.92));color:var(--lb-fg,#1d2633);border:1px solid var(--lb-bd,rgba(20,30,45,.18));box-shadow:0 1px 4px rgba(0,0,0,.12)}
+#langBtn:hover{border-color:currentColor}
+#langBtn:focus-visible{outline:2px solid #3b82f6;outline-offset:2px}
+:root[data-theme="dark"] #langBtn{--lb-bg:rgba(22,28,38,.92);--lb-fg:#e8eef6;--lb-bd:rgba(255,255,255,.18)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) #langBtn{--lb-bg:rgba(22,28,38,.92);--lb-fg:#e8eef6;--lb-bd:rgba(255,255,255,.18)}}
+:root[data-lang="ko"] body{word-break:keep-all}
+:root[data-lang="ko"]{--sans:"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;--serif:"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;--ui-font:"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif}
+:root[data-lang="ko"] body{font-family:"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif}
+
+@media print{#langBtn{display:none}}
+</style>
+<!-- lang-toggle:head-end -->
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>The Ising model</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -152,9 +170,9 @@ button.theme-btn svg{width:20px; height:20px; fill:none; stroke:currentColor; st
 <div class="wrap">
 
 <header>
-  <h1>The Ising model</h1>
-  <p class="lede">Spins on a lattice point up or down, and neighbors prefer to align. That is all, yet below a critical temperature T<sub>c</sub> a magnetization appears spontaneously, without any external field. Explore the model directly, compute its thermodynamics exactly for small lattices, compare it with non-interacting spins, and measure the quantities of interest near the critical point.</p>
-  <p class="note" style="margin-top:6px">Based on lecture notes by Sang Hoon Lee for Chapter 2 (part 1), following K. Christensen and N. R. Moloney, <i>Complexity and Criticality</i> (2005). Units: k<sub>B</sub> = 1 and J = 1, so temperatures and fields are in units of J. <a href="#references" style="color:var(--accent)">References</a></p>
+  <h1 data-k="k1">The Ising model</h1>
+  <p class="lede" data-k="k2">Spins on a lattice point up or down, and neighbors prefer to align. That is all, yet below a critical temperature T<sub>c</sub> a magnetization appears spontaneously, without any external field. Explore the model directly, compute its thermodynamics exactly for small lattices, compare it with non-interacting spins, and measure the quantities of interest near the critical point.</p>
+  <p class="note" style="margin-top:6px" data-k="k3">Based on lecture notes by Sang Hoon Lee for Chapter 2 (part 1), following K. Christensen and N. R. Moloney, <i>Complexity and Criticality</i> (2005). Units: k<sub>B</sub> = 1 and J = 1, so temperatures and fields are in units of J. <a href="#references" style="color:var(--accent)">References</a></p>
 </header>
 
 <div class="hero">
@@ -171,163 +189,163 @@ button.theme-btn svg{width:20px; height:20px; fill:none; stroke:currentColor; st
     <div class="btns" aria-label="Temperature presets">
       <button data-t="0.7">0.7</button><button data-t="0.99">0.99</button><button data-t="1">1 (T<sub>c</sub>)</button><button data-t="1.2">1.2</button><button data-t="1.5">1.5</button><button data-t="4">4</button>
     </div>
-    <div class="sl" style="margin:4px 0 0"><label for="hSl">External field H</label><output id="hOut"></output><input type="range" id="hSl" min="-1" max="1" step="0.01" value="0"></div>
+    <div class="sl" style="margin:4px 0 0"><label for="hSl" data-k="k4">External field H</label><output id="hOut"></output><input type="range" id="hSl" min="-1" max="1" step="0.01" value="0"></div>
     <div class="row" style="gap:16px">
-      <div class="field"><label class="lab" for="lSel">Lattice</label><select id="lSel"><option value="8">8 × 8</option><option value="16">16 × 16</option><option value="32">32 × 32</option><option value="64">64 × 64</option><option value="128" selected>128 × 128</option><option value="256">256 × 256</option></select></div>
-      <div class="field"><label class="lab" for="aSel">Update rule</label><select id="aSel"><option value="metro" selected>Metropolis (single spins)</option><option value="wolff">Wolff (clusters, H = 0 only)</option></select></div>
-      <div class="field"><label class="lab" for="spf">Speed</label><select id="spf"><option value="0.1">slow: about 6 sweeps per second</option><option value="0.25" selected>moderate: about 15 sweeps per second</option><option value="1">1 sweep per frame (about 60 per second)</option><option value="4">4 sweeps per frame</option><option value="16">16 sweeps per frame</option></select></div>
+      <div class="field"><label class="lab" for="lSel" data-k="k5">Lattice</label><select id="lSel"><option value="8">8 × 8</option><option value="16">16 × 16</option><option value="32">32 × 32</option><option value="64">64 × 64</option><option value="128" selected>128 × 128</option><option value="256">256 × 256</option></select></div>
+      <div class="field"><label class="lab" for="aSel" data-k="k6">Update rule</label><select id="aSel"><option value="metro" selected><span data-k="k7">Metropolis (single spins)</span></option><option value="wolff"><span data-k="k8">Wolff (clusters, H = 0 only)</span></option></select></div>
+      <div class="field"><label class="lab" for="spf" data-k="k9">Speed</label><select id="spf"><option value="0.1"><span data-k="k10">slow: about 6 sweeps per second</span></option><option value="0.25" selected><span data-k="k11">moderate: about 15 sweeps per second</span></option><option value="1"><span data-k="k12">1 sweep per frame (about 60 per second)</span></option><option value="4"><span data-k="k13">4 sweeps per frame</span></option><option value="16"><span data-k="k14">16 sweeps per frame</span></option></select></div>
     </div>
     <div class="row">
       <button id="runB" class="primary">Pause</button>
-      <button id="rnd">Random start (T = ∞)</button>
-      <button id="allUp">All up</button>
-      <button id="allDn">All down</button>
+      <button id="rnd" data-k="k15">Random start (T = ∞)</button>
+      <button id="allUp" data-k="k16">All up</button>
+      <button id="allDn" data-k="k17">All down</button>
     </div>
     <dl class="readouts">
-      <dt>Temperature T (in units of J/k<sub>B</sub>)</dt><dd id="rT">–</dd>
-      <dt>Magnetization per spin m</dt><dd id="rM">–</dd>
-      <dt>Time average of |m|</dt><dd id="rMa">–</dd>
-      <dt>Onsager’s m<sub>0</sub>(T) for an infinite lattice</dt><dd id="rM0">–</dd>
-      <dt>Energy per spin ε</dt><dd id="rE">–</dd>
-      <dt>Sweeps since the last change</dt><dd id="rSw">–</dd>
+      <dt data-k="k18">Temperature T (in units of J/k<sub>B</sub>)</dt><dd id="rT">–</dd>
+      <dt data-k="k19">Magnetization per spin m</dt><dd id="rM">–</dd>
+      <dt data-k="k20">Time average of |m|</dt><dd id="rMa">–</dd>
+      <dt data-k="k21">Onsager’s m<sub>0</sub>(T) for an infinite lattice</dt><dd id="rM0">–</dd>
+      <dt data-k="k22">Energy per spin ε</dt><dd id="rE">–</dd>
+      <dt data-k="k23">Sweeps since the last change</dt><dd id="rSw">–</dd>
     </dl>
   </div>
 </div>
 <div class="figs">
-  <figure><figcaption><b>Magnetization per spin over time</b>Below T<sub>c</sub> a small lattice flips now and then between +m and −m (dashed: Onsager’s ±m<sub>0</sub>); a large one stays put.</figcaption><canvas id="tsC"></canvas></figure>
-  <figure><figcaption><b>Distribution of m over time</b>One peak at m = 0 above T<sub>c</sub>, two peaks at ±m<sub>0</sub> below it, and a broad distribution at T<sub>c</sub>.</figcaption><canvas id="hiC"></canvas></figure>
-  <figure><figcaption><b>Spin–spin correlation function g(r) of this lattice</b>g(r) = ⟨s<sub>i</sub>s<sub>i+r</sub>⟩ − ⟨|m|⟩², averaged over time along both axes. Log–log; dashed: r<sup>−(d−2+η)</sup> = r<sup>−1/4</sup>, the decay at T<sub>c</sub>.</figcaption><canvas id="gC"></canvas></figure>
+  <figure><figcaption data-k="k24"><b>Magnetization per spin over time</b>Below T<sub>c</sub> a small lattice flips now and then between +m and −m (dashed: Onsager’s ±m<sub>0</sub>); a large one stays put.</figcaption><canvas id="tsC"></canvas></figure>
+  <figure><figcaption data-k="k25"><b>Distribution of m over time</b>One peak at m = 0 above T<sub>c</sub>, two peaks at ±m<sub>0</sub> below it, and a broad distribution at T<sub>c</sub>.</figcaption><canvas id="hiC"></canvas></figure>
+  <figure><figcaption data-k="k26"><b>Spin–spin correlation function g(r) of this lattice</b>g(r) = ⟨s<sub>i</sub>s<sub>i+r</sub>⟩ − ⟨|m|⟩², averaged over time along both axes. Log–log; dashed: r<sup>−(d−2+η)</sup> = r<sup>−1/4</sup>, the decay at T<sub>c</sub>.</figcaption><canvas id="gC"></canvas></figure>
 </div>
 
 <section>
-  <h2>Defining the Ising model</h2>
-  <p class="prose">Every site i of a lattice carries a spin s<sub>i</sub> = +1 or −1, like a magnetic dipole that can point only along one axis. A pair of neighboring spins has energy −J when parallel and +J when antiparallel, and a uniform external field H adds −H for each spin along it and +H for each against it:</p>
-  <div class="eq">E<sub>{s<sub>i</sub>}</sub> = −J Σ<sub>⟨ij⟩</sub> s<sub>i</sub>s<sub>j</sub> − H Σ<sub>i</sub> s<sub>i</sub></div>
-  <p class="prose">The first sum runs over distinct nearest-neighbor pairs. For J &gt; 0 parallel spins are favored, a ferromagnet; for J &lt; 0 antiparallel ones, an antiferromagnet. Click spins below to flip them. Even this 5 × 5 lattice has 2<sup>25</sup> = 33 554 432 microstates, while a macrostate such as “14 up and 11 down” lumps many of them together.</p>
+  <h2 data-k="k27">Defining the Ising model</h2>
+  <p class="prose" data-k="k28">Every site i of a lattice carries a spin s<sub>i</sub> = +1 or −1, like a magnetic dipole that can point only along one axis. A pair of neighboring spins has energy −J when parallel and +J when antiparallel, and a uniform external field H adds −H for each spin along it and +H for each against it:</p>
+  <div class="eq" data-k="k29">E<sub>{s<sub>i</sub>}</sub> = −J Σ<sub>⟨ij⟩</sub> s<sub>i</sub>s<sub>j</sub> − H Σ<sub>i</sub> s<sub>i</sub></div>
+  <p class="prose" data-k="k30">The first sum runs over distinct nearest-neighbor pairs. For J &gt; 0 parallel spins are favored, a ferromagnet; for J &lt; 0 antiparallel ones, an antiferromagnet. Click spins below to flip them. Even this 5 × 5 lattice has 2<sup>25</sup> = 33 554 432 microstates, while a macrostate such as “14 up and 11 down” lumps many of them together.</p>
   <div class="two2">
     <div><canvas id="toy" tabindex="0" aria-label="5 by 5 Ising lattice; click a spin to flip it, or use the arrow keys to move the cursor and Enter or Space to flip the selected spin" aria-describedby="toyCur"></canvas>
       <p class="plate-note" id="toyCur" aria-live="polite"></p>
-      <p class="plate-note">Free boundaries, 40 nearest-neighbor pairs. Blue bonds lower the energy and red bonds raise it: for J &gt; 0 blue joins parallel spins, for J &lt; 0 antiparallel ones.</p></div>
+      <p class="plate-note" data-k="k31">Free boundaries, 40 nearest-neighbor pairs. Blue bonds lower the energy and red bonds raise it: for J &gt; 0 blue joins parallel spins, for J &lt; 0 antiparallel ones.</p></div>
     <div>
-      <fieldset style="margin-bottom:12px"><legend>Coupling</legend><div class="seg"><label><input type="radio" name="tj" value="1" checked><span>J = +1, ferromagnet</span></label><label><input type="radio" name="tj" value="-1"><span>J = −1, antiferromagnet</span></label></div></fieldset>
-      <div class="sl"><label for="tH">External field H</label><output id="tHo"></output><input type="range" id="tH" min="-2" max="2" step="0.1" value="0"></div>
-      <div class="row" style="margin-bottom:12px"><button id="tUp">All up</button><button id="tRnd">Random</button><button id="tChk">Checkerboard</button></div>
+      <fieldset style="margin-bottom:12px"><legend><span data-k="k32">Coupling</span></legend><div class="seg"><label><input type="radio" name="tj" value="1" checked><span data-k="k33"><span>J = +1, ferromagnet</span></span></label><label><input type="radio" name="tj" value="-1"><span data-k="k34"><span>J = −1, antiferromagnet</span></span></label></div></fieldset>
+      <div class="sl"><label for="tH" data-k="k35">External field H</label><output id="tHo"></output><input type="range" id="tH" min="-2" max="2" step="0.1" value="0"></div>
+      <div class="row" style="margin-bottom:12px"><button id="tUp" data-k="k36">All up</button><button id="tRnd" data-k="k37">Random</button><button id="tChk" data-k="k38">Checkerboard</button></div>
       <dl class="readouts" id="toyRead"></dl>
     </div>
   </div>
   <div class="tbl"><table aria-label="Pair energies">
-    <thead><tr><th>s<sub>i</sub></th><th>s<sub>j</sub></th><th>Configuration</th><th style="text-align:right">Interaction energy −J s<sub>i</sub>s<sub>j</sub></th></tr></thead>
+    <thead><tr><th>s<sub>i</sub></th><th>s<sub>j</sub></th><th data-k="k39">Configuration</th><th style="text-align:right" data-k="k40">Interaction energy −J s<sub>i</sub>s<sub>j</sub></th></tr></thead>
     <tbody><tr><td>+1</td><td>+1</td><td>↑ ↑</td><td class="num">−J</td></tr><tr><td>−1</td><td>−1</td><td>↓ ↓</td><td class="num">−J</td></tr><tr><td>+1</td><td>−1</td><td>↑ ↓</td><td class="num">+J</td></tr><tr><td>−1</td><td>+1</td><td>↓ ↑</td><td class="num">+J</td></tr></tbody>
   </table></div>
-  <p class="prose" style="margin-top:18px">The interest is in how the model behaves as the temperature changes. When k<sub>B</sub>T ≪ J the interactions dominate and spins align to lower the energy; when k<sub>B</sub>T ≫ J they are effectively independent and point up and down at random, maximizing the entropy. Between these limits a high-temperature disordered (paramagnetic) phase gives way to a low-temperature ordered (ferromagnetic) phase. Try the temperature presets at the top: the lattice looks random at 4T<sub>c</sub>, grows ever larger domains on the way down, is a fractal of droplets within droplets at T<sub>c</sub>, and is almost fully aligned at 0.7T<sub>c</sub>.</p>
+  <p class="prose" style="margin-top:18px" data-k="k41">The interest is in how the model behaves as the temperature changes. When k<sub>B</sub>T ≪ J the interactions dominate and spins align to lower the energy; when k<sub>B</sub>T ≫ J they are effectively independent and point up and down at random, maximizing the entropy. Between these limits a high-temperature disordered (paramagnetic) phase gives way to a low-temperature ordered (ferromagnetic) phase. Try the temperature presets at the top: the lattice looks random at 4T<sub>c</sub>, grows ever larger domains on the way down, is a fractal of droplets within droplets at T<sub>c</sub>, and is almost fully aligned at 0.7T<sub>c</sub>.</p>
 </section>
 
 <section>
-  <h2>Statistical mechanics by exact enumeration</h2>
-  <p class="prose">In the canonical ensemble, a system in contact with a heat reservoir at temperature T is found in microstate {s<sub>i</sub>} with probability P = e<sup>−βE</sup>/Z, with β = 1/k<sub>B</sub>T. Every observable is an ensemble average, and everything follows from the partition function and the free energy:</p>
-  <div class="eq">Z(T, H) = Σ<sub>{s<sub>i</sub>}</sub> e<sup>−βE<sub>{s<sub>i</sub>}</sub></sup>,  F = ⟨E⟩ − TS = −k<sub>B</sub>T ln Z</div>
-  <p class="prose">Per spin: m = −(∂f/∂H)<sub>T</sub>, ε = −(1/N)(∂ ln Z/∂β)<sub>H</sub>, S/N = (ε − f)/T, and the response functions are second derivatives, χ = (∂m/∂H)<sub>T</sub> and c = (∂ε/∂T)<sub>H</sub>. Differentiating Z once more gives the fluctuation–dissipation relations k<sub>B</sub>Tχ = (⟨M²⟩ − ⟨M⟩²)/N and k<sub>B</sub>T²c = (⟨E²⟩ − ⟨E⟩²)/N: the response to a small push equals the size of the spontaneous fluctuations. For a small periodic lattice the page sums over every microstate exactly and checks both relations.</p>
+  <h2 data-k="k42">Statistical mechanics by exact enumeration</h2>
+  <p class="prose" data-k="k43">In the canonical ensemble, a system in contact with a heat reservoir at temperature T is found in microstate {s<sub>i</sub>} with probability P = e<sup>−βE</sup>/Z, with β = 1/k<sub>B</sub>T. Every observable is an ensemble average, and everything follows from the partition function and the free energy:</p>
+  <div class="eq" data-k="k44">Z(T, H) = Σ<sub>{s<sub>i</sub>}</sub> e<sup>−βE<sub>{s<sub>i</sub>}</sub></sup>,  F = ⟨E⟩ − TS = −k<sub>B</sub>T ln Z</div>
+  <p class="prose" data-k="k45">Per spin: m = −(∂f/∂H)<sub>T</sub>, ε = −(1/N)(∂ ln Z/∂β)<sub>H</sub>, S/N = (ε − f)/T, and the response functions are second derivatives, χ = (∂m/∂H)<sub>T</sub> and c = (∂ε/∂T)<sub>H</sub>. Differentiating Z once more gives the fluctuation–dissipation relations k<sub>B</sub>Tχ = (⟨M²⟩ − ⟨M⟩²)/N and k<sub>B</sub>T²c = (⟨E²⟩ − ⟨E⟩²)/N: the response to a small push equals the size of the spontaneous fluctuations. For a small periodic lattice the page sums over every microstate exactly and checks both relations.</p>
   <div class="row" style="gap:18px; margin-top:8px; align-items:flex-end">
-    <div class="field"><label class="lab" for="xL">Periodic lattice</label><select id="xL"><option value="3">3 × 3 (512 states)</option><option value="4" selected>4 × 4 (65 536 states)</option><option value="5">5 × 5 (33 554 432 states)</option></select></div>
-    <fieldset><legend>Interaction</legend><div class="seg"><label><input type="radio" name="xJ" value="1" checked><span>Ising, J = 1</span></label><label><input type="radio" name="xJ" value="0"><span>Non-interacting, J = 0</span></label></div></fieldset>
+    <div class="field"><label class="lab" for="xL" data-k="k46">Periodic lattice</label><select id="xL"><option value="3"><span data-k="k47">3 × 3 (512 states)</span></option><option value="4" selected><span data-k="k48">4 × 4 (65 536 states)</span></option><option value="5"><span data-k="k49">5 × 5 (33 554 432 states)</span></option></select></div>
+    <fieldset><legend><span data-k="k50">Interaction</span></legend><div class="seg"><label><input type="radio" name="xJ" value="1" checked><span data-k="k51"><span>Ising, J = 1</span></span></label><label><input type="radio" name="xJ" value="0"><span data-k="k52"><span>Non-interacting, J = 0</span></span></label></div></fieldset>
     <span class="note" id="xStat"></span>
   </div>
   <div class="row" style="gap:24px; margin-top:6px">
-    <div class="sl" style="flex:1 1 240px"><label for="xH">Field H for the curves against T</label><output id="xHo"></output><input type="range" id="xH" min="0" max="1" step="0.01" value="0.05"></div>
-    <div class="sl" style="flex:1 1 240px"><label for="xT">Temperature T for the curves against H</label><output id="xTo"></output><input type="range" id="xT" min="0.2" max="6" step="0.01" value="2.27"></div>
+    <div class="sl" style="flex:1 1 240px"><label for="xH" data-k="k53">Field H for the curves against T</label><output id="xHo"></output><input type="range" id="xH" min="0" max="1" step="0.01" value="0.05"></div>
+    <div class="sl" style="flex:1 1 240px"><label for="xT" data-k="k54">Temperature T for the curves against H</label><output id="xTo"></output><input type="range" id="xT" min="0.2" max="6" step="0.01" value="2.27"></div>
   </div>
   <div class="figs">
-    <figure><figcaption><b>Magnetization m(T) at the chosen H</b>Blue: ⟨m⟩. Light: ⟨|m|⟩. Dashed: non-interacting spins, tanh(H/T). Exact for this finite lattice, so smooth everywhere.</figcaption><canvas id="x1"></canvas></figure>
-    <figure><figcaption><b>Susceptibility χ(T): response equals fluctuation</b>Line: χ = ∂m/∂H, a numerical derivative. Dots: (⟨M²⟩ − ⟨M⟩²)/(N k<sub>B</sub>T).</figcaption><canvas id="x2"></canvas></figure>
-    <figure><figcaption><b>Specific heat c(T): response equals fluctuation</b>Line: c = ∂ε/∂T. Dots: (⟨E²⟩ − ⟨E⟩²)/(N k<sub>B</sub>T²).</figcaption><canvas id="x3"></canvas></figure>
-    <figure><figcaption><b>Free energy, energy and entropy per spin</b>f = −T ln Z/N, ε, and S/N = (ε − f)/T, which rises to ln 2 (dotted) when the spins become random.</figcaption><canvas id="x4"></canvas></figure>
-    <figure><figcaption><b>Magnetization m(H) at the chosen T</b>Blue: this lattice. Dashed: tanh(H/T). Interactions make the response steeper.</figcaption><canvas id="x5"></canvas></figure>
-    <figure><figcaption><b>Probability of each total magnetization M</b>At the chosen T and H. At H = 0 it is always symmetric, so ⟨M⟩ = 0 exactly; a small field tips it to one side.</figcaption><canvas id="x6"></canvas></figure>
+    <figure><figcaption data-k="k55"><b>Magnetization m(T) at the chosen H</b>Blue: ⟨m⟩. Light: ⟨|m|⟩. Dashed: non-interacting spins, tanh(H/T). Exact for this finite lattice, so smooth everywhere.</figcaption><canvas id="x1"></canvas></figure>
+    <figure><figcaption data-k="k56"><b>Susceptibility χ(T): response equals fluctuation</b>Line: χ = ∂m/∂H, a numerical derivative. Dots: (⟨M²⟩ − ⟨M⟩²)/(N k<sub>B</sub>T).</figcaption><canvas id="x2"></canvas></figure>
+    <figure><figcaption data-k="k57"><b>Specific heat c(T): response equals fluctuation</b>Line: c = ∂ε/∂T. Dots: (⟨E²⟩ − ⟨E⟩²)/(N k<sub>B</sub>T²).</figcaption><canvas id="x3"></canvas></figure>
+    <figure><figcaption data-k="k58"><b>Free energy, energy and entropy per spin</b>f = −T ln Z/N, ε, and S/N = (ε − f)/T, which rises to ln 2 (dotted) when the spins become random.</figcaption><canvas id="x4"></canvas></figure>
+    <figure><figcaption data-k="k59"><b>Magnetization m(H) at the chosen T</b>Blue: this lattice. Dashed: tanh(H/T). Interactions make the response steeper.</figcaption><canvas id="x5"></canvas></figure>
+    <figure><figcaption data-k="k60"><b>Probability of each total magnetization M</b>At the chosen T and H. At H = 0 it is always symmetric, so ⟨M⟩ = 0 exactly; a small field tips it to one side.</figcaption><canvas id="x6"></canvas></figure>
   </div>
   <div class="tbl"><table aria-label="Thermodynamic relations">
-    <thead><tr><th>Quantity</th><th>Relation</th><th>Response function</th></tr></thead>
+    <thead><tr><th data-k="k61">Quantity</th><th data-k="k62">Relation</th><th data-k="k63">Response function</th></tr></thead>
     <tbody>
-      <tr><td><b>Partition function</b></td><td>Z = Σ<sub>{s<sub>i</sub>}</sub> e<sup>−βE<sub>{s<sub>i</sub>}</sub></sup></td><td></td></tr>
-      <tr><td><b>Free energy per spin</b></td><td>f = −(1/N) k<sub>B</sub>T ln Z</td><td></td></tr>
-      <tr><td><b>Magnetization per spin</b></td><td>m = −(∂f/∂H)<sub>T</sub></td><td>χ = (∂m/∂H)<sub>T</sub> = −(∂²f/∂H²)<sub>T</sub></td></tr>
-      <tr><td><b>Energy per spin</b></td><td>ε = −(1/N)(∂ ln Z/∂β)<sub>H</sub> = f − T(∂f/∂T)<sub>H</sub></td><td>c = (∂ε/∂T)<sub>H</sub> = −T(∂²f/∂T²)<sub>H</sub></td></tr>
-      <tr><td><b>Entropy per spin</b></td><td>S/N = −(∂f/∂T)<sub>H</sub> = (ε − f)/T</td><td></td></tr>
+      <tr><td data-k="k64"><b>Partition function</b></td><td>Z = Σ<sub>{s<sub>i</sub>}</sub> e<sup>−βE<sub>{s<sub>i</sub>}</sub></sup></td><td></td></tr>
+      <tr><td data-k="k65"><b>Free energy per spin</b></td><td data-k="k66">f = −(1/N) k<sub>B</sub>T ln Z</td><td></td></tr>
+      <tr><td data-k="k67"><b>Magnetization per spin</b></td><td>m = −(∂f/∂H)<sub>T</sub></td><td>χ = (∂m/∂H)<sub>T</sub> = −(∂²f/∂H²)<sub>T</sub></td></tr>
+      <tr><td data-k="k68"><b>Energy per spin</b></td><td data-k="k69">ε = −(1/N)(∂ ln Z/∂β)<sub>H</sub> = f − T(∂f/∂T)<sub>H</sub></td><td>c = (∂ε/∂T)<sub>H</sub> = −T(∂²f/∂T²)<sub>H</sub></td></tr>
+      <tr><td data-k="k70"><b>Entropy per spin</b></td><td>S/N = −(∂f/∂T)<sub>H</sub> = (ε − f)/T</td><td></td></tr>
     </tbody></table></div>
-  <p class="prose" style="margin-top:18px">With 2<sup>N</sup> terms, Z is a finite sum of analytic functions, so f is analytic and nothing can be singular: no finite system has a phase transition. Only in the thermodynamic limit N → ∞, where boundary effects vanish and f → F<sub>bulk</sub>/N, can derivatives of f become discontinuous or diverge.</p>
+  <p class="prose" style="margin-top:18px" data-k="k71">With 2<sup>N</sup> terms, Z is a finite sum of analytic functions, so f is analytic and nothing can be singular: no finite system has a phase transition. Only in the thermodynamic limit N → ∞, where boundary effects vanish and f → F<sub>bulk</sub>/N, can derivatives of f become discontinuous or diverge.</p>
 </section>
 
 <section>
-  <h2>Non-interacting spins</h2>
-  <p class="prose">With J = 0 the partition function factorizes into N identical terms, and everything is exact:</p>
-  <div class="eq">Z = [2 cosh(βH)]<sup>N</sup>,  f = −k<sub>B</sub>T ln[2 cosh(H/k<sub>B</sub>T)],  m = tanh(H/k<sub>B</sub>T),  χ = β sech²(βH)</div>
-  <p class="prose">Only the ratio H/k<sub>B</sub>T matters. When it is small the entropy wins and spins point at random; when it is large the energy wins and all spins follow the field. f is analytic for every T and H, and at H = 0 the magnetization is zero for any T &gt; 0: there is no spontaneous magnetization and no phase transition, because a transition is a cooperative phenomenon that needs interactions. The energy is ε = −H tanh(βH) and the specific heat c = (H/k<sub>B</sub>T)² sech²(βH), a Schottky peak.</p>
+  <h2 data-k="k72">Non-interacting spins</h2>
+  <p class="prose" data-k="k73">With J = 0 the partition function factorizes into N identical terms, and everything is exact:</p>
+  <div class="eq" data-k="k74">Z = [2 cosh(βH)]<sup>N</sup>,  f = −k<sub>B</sub>T ln[2 cosh(H/k<sub>B</sub>T)],  m = tanh(H/k<sub>B</sub>T),  χ = β sech²(βH)</div>
+  <p class="prose" data-k="k75">Only the ratio H/k<sub>B</sub>T matters. When it is small the entropy wins and spins point at random; when it is large the energy wins and all spins follow the field. f is analytic for every T and H, and at H = 0 the magnetization is zero for any T &gt; 0: there is no spontaneous magnetization and no phase transition, because a transition is a cooperative phenomenon that needs interactions. The energy is ε = −H tanh(βH) and the specific heat c = (H/k<sub>B</sub>T)² sech²(βH), a Schottky peak.</p>
   <div class="row" style="gap:24px">
-    <div class="sl" style="flex:1 1 240px"><label for="nT">Temperature T for the distribution</label><output id="nTo"></output><input type="range" id="nT" min="0.1" max="5" step="0.01" value="1"></div>
-    <div class="sl" style="flex:1 1 240px"><label for="nH">Field H for the distribution and the T curves</label><output id="nHo"></output><input type="range" id="nH" min="0" max="2" step="0.01" value="0.3"></div>
+    <div class="sl" style="flex:1 1 240px"><label for="nT" data-k="k76">Temperature T for the distribution</label><output id="nTo"></output><input type="range" id="nT" min="0.1" max="5" step="0.01" value="1"></div>
+    <div class="sl" style="flex:1 1 240px"><label for="nH" data-k="k77">Field H for the distribution and the T curves</label><output id="nHo"></output><input type="range" id="nH" min="0" max="2" step="0.01" value="0.3"></div>
   </div>
   <div class="figs">
-    <figure><figcaption><b>m(H) = tanh(H/T)</b>For T = 0.02 (blue), 0.5 (green), 1 (orange) and 2 (pink). As T → 0 it becomes a step: m = ±1 for H → 0<sup>±</sup>.</figcaption><canvas id="n1"></canvas></figure>
-    <figure><figcaption><b>χ(H) = β sech²(βH)</b>For T = 0.5 (green), 1 (orange) and 2 (pink). At H = 0, χ = 1/T, which diverges only as T → 0.</figcaption><canvas id="n2"></canvas></figure>
-    <figure><figcaption><b>Energy ε(T) and specific heat c(T) at the chosen H</b>ε = −H tanh(H/T) (blue) and c = (H/T)² sech²(H/T) (red).</figcaption><canvas id="n3"></canvas></figure>
-    <figure><figcaption><b>Distribution of m = M/N for N = 16 (orange), 256 (green) and 4 096 (blue)</b>At the chosen T and H. It narrows around tanh(βH) as N grows: relative fluctuations shrink as 1/<span class="rad"><span class="rs">√</span><span class="rc">N.</span></span></figcaption><canvas id="n4"></canvas><p class="fit" id="n4t"></p></figure>
+    <figure><figcaption data-k="k78"><b>m(H) = tanh(H/T)</b>For T = 0.02 (blue), 0.5 (green), 1 (orange) and 2 (pink). As T → 0 it becomes a step: m = ±1 for H → 0<sup>±</sup>.</figcaption><canvas id="n1"></canvas></figure>
+    <figure><figcaption data-k="k79"><b>χ(H) = β sech²(βH)</b>For T = 0.5 (green), 1 (orange) and 2 (pink). At H = 0, χ = 1/T, which diverges only as T → 0.</figcaption><canvas id="n2"></canvas></figure>
+    <figure><figcaption data-k="k80"><b>Energy ε(T) and specific heat c(T) at the chosen H</b>ε = −H tanh(H/T) (blue) and c = (H/T)² sech²(H/T) (red).</figcaption><canvas id="n3"></canvas></figure>
+    <figure><figcaption data-k="k81"><b>Distribution of m = M/N for N = 16 (orange), 256 (green) and 4 096 (blue)</b>At the chosen T and H. It narrows around tanh(βH) as N grows: relative fluctuations shrink as 1/<span class="rad"><span class="rs">√</span><span class="rc">N.</span></span></figcaption><canvas id="n4"></canvas><p class="fit" id="n4t"></p></figure>
   </div>
 </section>
 
 <section>
-  <h2>Quantities of interest near T<sub>c</sub></h2>
-  <p class="prose">Back to the interacting model at H = 0. On the square lattice Onsager’s exact solution puts the transition at k<sub>B</sub>T<sub>c</sub>/J = 2/ln(1 + <span class="rad"><span class="rs">√</span><span class="rc">2</span></span>) ≈ 2.269. The page simulates 16 × 16, 32 × 32 and 64 × 64 lattices with the Wolff cluster algorithm at temperatures across T<sub>c</sub> (each measurement after a fixed number of cluster updates, ≈ N/⟨C⟩ calibrated during equilibration, so that the measurement time does not depend on the state), and compares them with the exact infinite-lattice results. As in percolation, the singular behavior is described by power laws:</p>
+  <h2 data-k="k82">Quantities of interest near T<sub>c</sub></h2>
+  <p class="prose" data-k="k83">Back to the interacting model at H = 0. On the square lattice Onsager’s exact solution puts the transition at k<sub>B</sub>T<sub>c</sub>/J = 2/ln(1 + <span class="rad"><span class="rs">√</span><span class="rc">2</span></span>) ≈ 2.269. The page simulates 16 × 16, 32 × 32 and 64 × 64 lattices with the Wolff cluster algorithm at temperatures across T<sub>c</sub> (each measurement after a fixed number of cluster updates, ≈ N/⟨C⟩ calibrated during equilibration, so that the measurement time does not depend on the state), and compares them with the exact infinite-lattice results. As in percolation, the singular behavior is described by power laws:</p>
   <div class="tbl"><table aria-label="Critical exponents">
-    <thead><tr><th>Exponent</th><th>Definition</th><th style="text-align:right">2D Ising (exact)</th><th style="text-align:right">Mean field</th><th style="text-align:right">2D percolation</th><th style="text-align:right">This run</th></tr></thead>
+    <thead><tr><th data-k="k84">Exponent</th><th data-k="k85">Definition</th><th style="text-align:right" data-k="k86">2D Ising (exact)</th><th style="text-align:right" data-k="k87">Mean field</th><th style="text-align:right" data-k="k88">2D percolation</th><th style="text-align:right" data-k="k89">This run</th></tr></thead>
     <tbody id="expBody"></tbody></table></div>
   <div class="status">
     <span id="chips" class="row" style="gap:14px"></span>
     <span class="bar" aria-hidden="true"><i id="prog"></i></span>
     <span id="stTxt"></span>
     <button id="run">Pause</button>
-    <button id="more">Add more samples</button>
+    <button id="more" data-k="k90">Add more samples</button>
   </div>
   <div class="figs">
-    <figure><figcaption><b>Spontaneous magnetization m<sub>0</sub>(T)</b>Dots: ⟨|m|⟩ for each L. Dashed: Onsager, m<sub>0</sub> = [1 − sinh<sup>−4</sup>(2J/k<sub>B</sub>T)]<sup>1/8</sup>, which rises with β = 1/8 and a vertical tangent at T<sub>c</sub>.</figcaption><canvas id="s1"></canvas></figure>
-    <figure><figcaption><b>Susceptibility χ(T)</b>From the fluctuations, χ = N(⟨m²⟩ − ⟨|m|⟩²)/k<sub>B</sub>T. The peak grows as L<sup>γ/ν</sup> = L<sup>7/4</sup>.</figcaption><canvas id="s2"></canvas></figure>
-    <figure><figcaption><b>Specific heat c(T)</b>From energy fluctuations. Dashed: Onsager’s exact c for the infinite lattice, which diverges logarithmically (α = 0).</figcaption><canvas id="s3"></canvas></figure>
-    <figure><figcaption><b>Energy per spin ε(T)</b>Dashed: Onsager’s exact result. Continuous at T<sub>c</sub>, but with an infinite slope.</figcaption><canvas id="s4"></canvas></figure>
-    <figure><figcaption><b>Finite-size scaling at T<sub>c</sub></b>⟨|m|⟩ ∝ L<sup>−β/ν</sup> (blue) and N⟨m²⟩/k<sub>B</sub>T<sub>c</sub> ∝ L<sup>γ/ν</sup> (red), as for percolation on finite lattices. At T<sub>c</sub> the full ⟨m²⟩ is used, because subtracting ⟨|m|⟩² there removes part of the signal on small lattices.</figcaption><canvas id="s5"></canvas><p class="fit" id="s5t"></p></figure>
+    <figure><figcaption data-k="k91"><b>Spontaneous magnetization m<sub>0</sub>(T)</b>Dots: ⟨|m|⟩ for each L. Dashed: Onsager, m<sub>0</sub> = [1 − sinh<sup>−4</sup>(2J/k<sub>B</sub>T)]<sup>1/8</sup>, which rises with β = 1/8 and a vertical tangent at T<sub>c</sub>.</figcaption><canvas id="s1"></canvas></figure>
+    <figure><figcaption data-k="k92"><b>Susceptibility χ(T)</b>From the fluctuations, χ = N(⟨m²⟩ − ⟨|m|⟩²)/k<sub>B</sub>T. The peak grows as L<sup>γ/ν</sup> = L<sup>7/4</sup>.</figcaption><canvas id="s2"></canvas></figure>
+    <figure><figcaption data-k="k93"><b>Specific heat c(T)</b>From energy fluctuations. Dashed: Onsager’s exact c for the infinite lattice, which diverges logarithmically (α = 0).</figcaption><canvas id="s3"></canvas></figure>
+    <figure><figcaption data-k="k94"><b>Energy per spin ε(T)</b>Dashed: Onsager’s exact result. Continuous at T<sub>c</sub>, but with an infinite slope.</figcaption><canvas id="s4"></canvas></figure>
+    <figure><figcaption data-k="k95"><b>Finite-size scaling at T<sub>c</sub></b>⟨|m|⟩ ∝ L<sup>−β/ν</sup> (blue) and N⟨m²⟩/k<sub>B</sub>T<sub>c</sub> ∝ L<sup>γ/ν</sup> (red), as for percolation on finite lattices. At T<sub>c</sub> the full ⟨m²⟩ is used, because subtracting ⟨|m|⟩² there removes part of the signal on small lattices.</figcaption><canvas id="s5"></canvas><p class="fit" id="s5t"></p></figure>
   </div>
-  <p class="prose" style="margin-top:18px">The correlation length ξ is the typical size of the largest cluster of aligned spins, or equivalently the scale of the largest fluctuations away from the fully aligned state below T<sub>c</sub> and away from the random state above it. It diverges as ξ ∝ |T − T<sub>c</sub>|<sup>−ν</sup> and is defined through the spin–spin correlation function g(r<sub>i</sub>, r<sub>j</sub>) = ⟨s<sub>i</sub>s<sub>j</sub>⟩ − ⟨s<sub>i</sub>⟩⟨s<sub>j</sub>⟩. Summing g over all sites gives k<sub>B</sub>Tχ, so a diverging χ means g cannot decay exponentially at T<sub>c</sub>; it decays as r<sup>−(d−2+η)</sup>. The correlation chart under the live lattice shows this when it runs at T<sub>c</sub>.</p>
+  <p class="prose" style="margin-top:18px" data-k="k96">The correlation length ξ is the typical size of the largest cluster of aligned spins, or equivalently the scale of the largest fluctuations away from the fully aligned state below T<sub>c</sub> and away from the random state above it. It diverges as ξ ∝ |T − T<sub>c</sub>|<sup>−ν</sup> and is defined through the spin–spin correlation function g(r<sub>i</sub>, r<sub>j</sub>) = ⟨s<sub>i</sub>s<sub>j</sub>⟩ − ⟨s<sub>i</sub>⟩⟨s<sub>j</sub>⟩. Summing g over all sites gives k<sub>B</sub>Tχ, so a diverging χ means g cannot decay exponentially at T<sub>c</sub>; it decays as r<sup>−(d−2+η)</sup>. The correlation chart under the live lattice shows this when it runs at T<sub>c</sub>.</p>
 </section>
 
 <section>
-  <h2>Symmetry breaking</h2>
-  <p class="prose">At H = 0 flipping every spin leaves the energy unchanged, so the microstates {s<sub>i</sub>} and {−s<sub>i</sub>} are equally probable and their magnetizations cancel: ⟨M⟩ = 0 exactly, at every temperature. A small field changes the ratio of their probabilities to</p>
-  <div class="eq">P<sub>{s<sub>i</sub>}</sub> / P<sub>{−s<sub>i</sub>}</sub> = exp(2βHM<sub>{s<sub>i</sub>}</sub>),  with M ∝ N</div>
-  <p class="prose">Taking H → 0 first, at fixed N, the ratio returns to 1 and ⟨M⟩ = 0. Taking N → ∞ first, the ratio becomes infinite for H → 0<sup>+</sup> and zero for H → 0<sup>−</sup>: one half of configuration space becomes inaccessible. This is ergodicity breaking, and it is what lets a nonzero magnetization survive. Simulations therefore usually record |m|.</p>
+  <h2 data-k="k97">Symmetry breaking</h2>
+  <p class="prose" data-k="k98">At H = 0 flipping every spin leaves the energy unchanged, so the microstates {s<sub>i</sub>} and {−s<sub>i</sub>} are equally probable and their magnetizations cancel: ⟨M⟩ = 0 exactly, at every temperature. A small field changes the ratio of their probabilities to</p>
+  <div class="eq" data-k="k99">P<sub>{s<sub>i</sub>}</sub> / P<sub>{−s<sub>i</sub>}</sub> = exp(2βHM<sub>{s<sub>i</sub>}</sub>),  with M ∝ N</div>
+  <p class="prose" data-k="k100">Taking H → 0 first, at fixed N, the ratio returns to 1 and ⟨M⟩ = 0. Taking N → ∞ first, the ratio becomes infinite for H → 0<sup>+</sup> and zero for H → 0<sup>−</sup>: one half of configuration space becomes inaccessible. This is ergodicity breaking, and it is what lets a nonzero magnetization survive. Simulations therefore usually record |m|.</p>
   <div class="row" style="gap:24px; align-items:flex-end">
-    <div class="sl" style="flex:1 1 220px"><label for="bH">Field H</label><output id="bHo"></output><input type="range" id="bH" min="0" max="0.01" step="0.0001" value="0.001"></div>
-    <div class="sl" style="flex:1 1 220px"><label for="bT">Temperature T/T<sub>c</sub> (below T<sub>c</sub>)</label><output id="bTo"></output><input type="range" id="bT" min="0.5" max="0.99" step="0.01" value="0.9"></div>
-    <button id="demoSmall">Watch an 8 × 8 lattice flip</button>
+    <div class="sl" style="flex:1 1 220px"><label for="bH" data-k="k101">Field H</label><output id="bHo"></output><input type="range" id="bH" min="0" max="0.01" step="0.0001" value="0.001"></div>
+    <div class="sl" style="flex:1 1 220px"><label for="bT" data-k="k102">Temperature T/T<sub>c</sub> (below T<sub>c</sub>)</label><output id="bTo"></output><input type="range" id="bT" min="0.5" max="0.99" step="0.01" value="0.9"></div>
+    <button id="demoSmall" data-k="k103">Watch an 8 × 8 lattice flip</button>
   </div>
   <div class="tbl"><table id="ratioTable" aria-label="Probability ratio against system size"></table></div>
-  <p class="note" style="margin-top:10px">The demo button sets the live lattice at the top to 8 × 8, T = 0.95T<sub>c</sub>, H = 0 and Metropolis updates at 16 sweeps per frame: its magnetization jumps between +m and −m every few hundred sweeps, and the distribution of m fills in both peaks. At 16 × 16 the jumps are already about ten times rarer. A 128 × 128 lattice practically never does, and any small field picks the side.</p>
+  <p class="note" style="margin-top:10px" data-k="k104">The demo button sets the live lattice at the top to 8 × 8, T = 0.95T<sub>c</sub>, H = 0 and Metropolis updates at 16 sweeps per frame: its magnetization jumps between +m and −m every few hundred sweeps, and the distribution of m fills in both peaks. At 16 × 16 the jumps are already about ten times rarer. A 128 × 128 lattice practically never does, and any small field picks the side.</p>
 </section>
 
 <section id="references">
-  <h2>References</h2>
-  <div class="keyref"><p class="prose" style="margin:0"><b>Key reference.</b> K. Christensen and N. R. Moloney, <i>Complexity and Criticality</i>, Imperial College Press, London (2005), Chapter 2.</p></div>
+  <h2 data-k="k105">References</h2>
+  <div class="keyref"><p class="prose" style="margin:0" data-k="k106"><b>Key reference.</b> K. Christensen and N. R. Moloney, <i>Complexity and Criticality</i>, Imperial College Press, London (2005), Chapter 2.</p></div>
   <ol class="refs">
-    <li>E. Ising, “Beitrag zur Theorie des Ferromagnetismus,” <i>Z. Phys.</i> <b>31</b>, 253 (1925).</li>
-    <li>S. G. Brush, “History of the Lenz–Ising model,” <i>Rev. Mod. Phys.</i> <b>39</b>, 883 (1967).</li>
-    <li>L. Onsager, “Crystal statistics. I. A two-dimensional model with an order-disorder transition,” <i>Phys. Rev.</i> <b>65</b>, 117 (1944).</li>
-    <li>C. N. Yang, “The spontaneous magnetization of a two-dimensional Ising model,” <i>Phys. Rev.</i> <b>85</b>, 808 (1952).</li>
-    <li>N. Metropolis, A. W. Rosenbluth, M. N. Rosenbluth, A. H. Teller and E. Teller, “Equation of state calculations by fast computing machines,” <i>J. Chem. Phys.</i> <b>21</b>, 1087 (1953).</li>
-    <li>U. Wolff, “Collective Monte Carlo updating for spin systems,” <i>Phys. Rev. Lett.</i> <b>62</b>, 361 (1989).</li>
-    <li>D. V. Schroeder, <i>An Introduction to Thermal Physics</i>, Addison-Wesley (2000), Chapter 6.</li>
-    <li>N. Goldenfeld, <i>Lectures on Phase Transitions and the Renormalization Group</i>, Addison-Wesley (1992).</li>
+    <li data-k="k107">E. Ising, “Beitrag zur Theorie des Ferromagnetismus,” <i>Z. Phys.</i> <b>31</b>, 253 (1925).</li>
+    <li data-k="k108">S. G. Brush, “History of the Lenz–Ising model,” <i>Rev. Mod. Phys.</i> <b>39</b>, 883 (1967).</li>
+    <li data-k="k109">L. Onsager, “Crystal statistics. I. A two-dimensional model with an order-disorder transition,” <i>Phys. Rev.</i> <b>65</b>, 117 (1944).</li>
+    <li data-k="k110">C. N. Yang, “The spontaneous magnetization of a two-dimensional Ising model,” <i>Phys. Rev.</i> <b>85</b>, 808 (1952).</li>
+    <li data-k="k111">N. Metropolis, A. W. Rosenbluth, M. N. Rosenbluth, A. H. Teller and E. Teller, “Equation of state calculations by fast computing machines,” <i>J. Chem. Phys.</i> <b>21</b>, 1087 (1953).</li>
+    <li data-k="k112">U. Wolff, “Collective Monte Carlo updating for spin systems,” <i>Phys. Rev. Lett.</i> <b>62</b>, 361 (1989).</li>
+    <li data-k="k113">D. V. Schroeder, <i>An Introduction to Thermal Physics</i>, Addison-Wesley (2000), Chapter 6.</li>
+    <li data-k="k114">N. Goldenfeld, <i>Lectures on Phase Transitions and the Renormalization Group</i>, Addison-Wesley (1992).</li>
   </ol>
 </section>
 
 <footer>
-  Simulations use Metropolis single-spin updates and Wolff cluster updates on periodic square lattices; exact results for small lattices enumerate every microstate with a Gray code.
-  <p style="margin-top:14px">Lecture notes by Sang Hoon Lee. Created by Claude Opus 5.5.</p>
+  <span data-k="k115">Simulations use Metropolis single-spin updates and Wolff cluster updates on periodic square lattices; exact results for small lattices enumerate every microstate with a Gray code.</span>
+  <p style="margin-top:14px" data-k="k116">Lecture notes by Sang Hoon Lee. Created by Claude Opus 5.5.</p>
 </footer>
 </div>
 
@@ -408,7 +426,7 @@ function plot(cv,o){
   const X0=fx(x0),X1=fx(x1),Y0=fy(y0),Y1=fy(y1);
   const X=v=>m.l+(fx(v)-X0)/(X1-X0)*pw, Y=v=>m.t+ph-(fy(v)-Y0)/(Y1-Y0)*ph;
   cv._inv = px => { const t=(px-m.l)/pw; const v=X0+t*(X1-X0); return o.logx?Math.pow(10,v):v; };
-  ctx.font='11px "Public Sans", system-ui, sans-serif'; ctx.lineWidth=1;
+  ctx.font='11px "Public Sans", "IBM Plex Sans KR", system-ui, sans-serif'; ctx.lineWidth=1;
   function ticks(lo,hi,log,custom){
     if (custom) return custom.filter(v=>v>=lo*0.999&&v<=hi*1.001).map(v=>[v,(o.xfmt||String)(v)]);
     if (log){
@@ -518,14 +536,14 @@ function renderSpins(){
 }
 function liveCharts(){
   const T=LV.tr*TC, mm=m0(T), n=LS.ts.length;
-  plot($('tsC'),{x:[0,Math.max(50,n)],y:[-1.05,1.05],series:[{color:C.accent,width:1.4,pts:LS.ts.map((v,i)=>[i,v])}].concat(mm>0?[{color:C.crit,dash:[5,4],width:1.1,pts:[[0,mm],[1e9,mm]]},{color:C.crit,dash:[5,4],width:1.1,pts:[[0,-mm],[1e9,-mm]]}]:[]),xlabel:'updates (most recent 600)',ylabel:'m'});
+  plot($('tsC'),{x:[0,Math.max(50,n)],y:[-1.05,1.05],series:[{color:C.accent,width:1.4,pts:LS.ts.map((v,i)=>[i,v])}].concat(mm>0?[{color:C.crit,dash:[5,4],width:1.1,pts:[[0,mm],[1e9,mm]]},{color:C.crit,dash:[5,4],width:1.1,pts:[[0,-mm],[1e9,-mm]]}]:[]),xlabel:tr('updates (most recent 600)','갱신 (최근 600회)'),ylabel:'m'});
   const hp=[]; if (LS.hn) for (let k=0;k<81;k++) hp.push([-1+k*2/80,LS.hist[k]/LS.hn/(2/80)]);
-  plot($('hiC'),{x:[-1,1],zeroY:true,series:[{color:C.accent,width:1.8,pts:hp}],vlines:mm>0?[{x:mm,color:C.crit,dash:[4,4]},{x:-mm,color:C.crit,dash:[4,4]}]:[],xlabel:'m',ylabel:'probability density'});
+  plot($('hiC'),{x:[-1,1],zeroY:true,series:[{color:C.accent,width:1.8,pts:hp}],vlines:mm>0?[{x:mm,color:C.crit,dash:[4,4]},{x:-mm,color:C.crit,dash:[4,4]}]:[],xlabel:'m',ylabel:tr('probability density','확률 밀도')});
   const ma=LS.mn?LS.mabs/LS.mn:0, g=[];
   if (LS.cn) for (let r=1;r<=LV.L/2;r++){ const v=LS.corr[r]/LS.cn-ma*ma; if (v>0) g.push([r,v]); }
   const ser=[{color:C.accent,width:1.8,pts:g},{dots:true,r:3,color:C.accent,pts:g}];
   if (g.length) ser.push({color:C.ink,dash:[6,4],width:1.2,noScale:true,pts:[1,LV.L/2].map(r=>[r,g[0][1]*Math.pow(r,-0.25)])});
-  plot($('gC'),{logx:true,logy:true,series:ser,xlabel:'distance r',ylabel:'g(r)'});
+  plot($('gC'),{logx:true,logy:true,series:ser,xlabel:tr('distance r','거리 r'),ylabel:'g(r)'});
 }
 /* The live lattice runs only while the user wants it running (LV.running), its figures are on screen and the tab
    is visible; otherwise no frame is scheduled. prefers-reduced-motion pauses at load and whenever it is switched
@@ -534,7 +552,7 @@ const RM=matchMedia('(prefers-reduced-motion: reduce)'), onScreen=new Map();
 let raf=0;
 const active=()=>LV.running && !document.hidden && (!onScreen.size || [...onScreen.values()].some(Boolean));
 function kick(){ if (!raf && active()){ LV.acc=0; raf=requestAnimationFrame(liveFrame); } }
-function setRun(on){ LV.running=on; $('runB').textContent=on?'Pause':'Run'; kick(); }
+function setRun(on){ LV.running=on; $('runB').textContent=on?tr('Pause','일시 정지'):tr('Run','실행'); kick(); }
 function liveFrame(){
   raf=0; if (!active()) return;
   if (LS && (LV.acc=(LV.acc||0)+LV.spf)>=1){
@@ -553,9 +571,9 @@ function liveRead(){
   const T=LV.tr*TC; $('tOut').textContent=LV.tr.toFixed(3); $('hOut').textContent=LV.H.toFixed(2);
   $('rT').textContent=T.toFixed(3); $('rM0').textContent= T<TC ? '±'+m0(T).toFixed(4) : '0';
   if (LS && LS.q){ $('rM').textContent=LS.q.m.toFixed(4); $('rE').textContent=LS.q.e.toFixed(4); }
-  $('rMa').textContent= LS && LS.mn ? (LS.mabs/LS.mn).toFixed(4) : '– (no measurement yet)';
-  $('rSw').textContent= !LS ? 0 : LS.wk && LS.flips ? `${LS.sweeps} × ${LS.wk} clusters (${(LS.flips/(LV.L*LV.L)).toFixed(1)} N flipped)` : LS.sweeps;
-  $('spinNote').textContent=`Up spins are white and down spins are black, as in the lecture notes. ${LV.L} × ${LV.L}, periodic boundaries.${LV.alg==='wolff'&&LV.H!==0?' The Wolff rule needs H = 0, so Metropolis is used while the field is on.':''}`;
+  $('rMa').textContent= LS && LS.mn ? (LS.mabs/LS.mn).toFixed(4) : tr('– (no measurement yet)','– (아직 측정 없음)');
+  $('rSw').textContent= !LS ? 0 : LS.wk && LS.flips ? tr(`${LS.sweeps} × ${LS.wk} clusters (${(LS.flips/(LV.L*LV.L)).toFixed(1)} N flipped)`,`${LS.sweeps} × ${LS.wk} 클러스터 (${(LS.flips/(LV.L*LV.L)).toFixed(1)} N개 뒤집힘)`) : LS.sweeps;
+  $('spinNote').textContent=tr(`Up spins are white and down spins are black, as in the lecture notes. ${LV.L} × ${LV.L}, periodic boundaries.`,`강의 노트에서처럼 위 스핀은 흰색, 아래 스핀은 검은색입니다. ${LV.L} × ${LV.L}, 주기 경계 조건.`)+(LV.alg==='wolff'&&LV.H!==0?tr(' The Wolff rule needs H = 0, so Metropolis is used while the field is on.',' 울프 규칙은 H = 0이 필요하므로, 자기장이 켜져 있는 동안은 메트로폴리스를 씁니다.'):'');
 }
 
 /* ---------- toy 5 x 5 lattice ---------- */
@@ -569,15 +587,15 @@ function toyDraw(){
   for (let y=0;y<L;y++) for (let x=0;x<L;x++){ const i=y*L+x;
     for (const [dx,dy] of [[1,0],[0,1]]){ const X2=x+dx, Y2=y+dy; if (X2>=L||Y2>=L) continue; const j=Y2*L+X2, par=s[i]*s[j]>0; if (par) sat++; else uns++;
       ctx.strokeStyle= (par===(TOY.J>0)) ? C.accent : C.crit; ctx.globalAlpha=0.75; ctx.beginPath(); ctx.moveTo((x+0.5)*c+dx*c*0.28,(y+0.5)*c+dy*c*0.28); ctx.lineTo((X2+0.5)*c-dx*c*0.28,(Y2+0.5)*c-dy*c*0.28); ctx.stroke(); ctx.globalAlpha=1; } }
-  ctx.font=`600 ${Math.round(c*0.5)}px "Public Sans", system-ui, sans-serif`; ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.font=`600 ${Math.round(c*0.5)}px "Public Sans", "IBM Plex Sans KR", system-ui, sans-serif`; ctx.textAlign='center'; ctx.textBaseline='middle';
   for (let i=0;i<25;i++){ const x=i%L, y=(i/L)|0; const sp=s[i]; if (sp>0) up++; M+=sp;
     ctx.fillStyle= sp>0 ? C.panel : C.ink; ctx.strokeStyle=C.ink; ctx.lineWidth=1.5; ctx.beginPath(); ctx.arc((x+0.5)*c,(y+0.5)*c,c*0.27,0,7); ctx.fill(); ctx.stroke();
     ctx.fillStyle= sp>0 ? C.ink : C.panel; ctx.fillText(sp>0?'↑':'↓',(x+0.5)*c,(y+0.52)*c); }
   if (document.activeElement===cv){ const x=TOY.cur%L, y=(TOY.cur/L)|0; ctx.strokeStyle=C.accent; ctx.lineWidth=3; ctx.strokeRect(x*c+3,y*c+3,c-6,c-6); }
-  $('toyCur').textContent=`Selected spin: row ${((TOY.cur/L)|0)+1}, column ${TOY.cur%L+1}, ${s[TOY.cur]>0?'up':'down'}.`;
+  $('toyCur').textContent=tr(`Selected spin: row ${((TOY.cur/L)|0)+1}, column ${TOY.cur%L+1}, ${s[TOY.cur]>0?'up':'down'}.`,`선택한 스핀: ${((TOY.cur/L)|0)+1}행 ${TOY.cur%L+1}열, ${s[TOY.cur]>0?'위':'아래'}.`);
   const Eint=-TOY.J*(sat-uns), Eext=-TOY.H*M;
   $('tHo').textContent=TOY.H.toFixed(1);
-  $('toyRead').innerHTML=`<dt>Up spins / down spins</dt><dd>${up} / ${25-up}</dd><dt>Total magnetization M = Σ s<sub>i</sub></dt><dd>${M}</dd><dt>Parallel / antiparallel pairs</dt><dd>${sat} / ${uns}</dd><dt>E<sub>int</sub> = −J Σ s<sub>i</sub>s<sub>j</sub></dt><dd>${Eint.toFixed(1)}</dd><dt>E<sub>ext</sub> = −H Σ s<sub>i</sub></dt><dd>${Eext.toFixed(1)}</dd><dt>Total energy E</dt><dd>${(Eint+Eext).toFixed(1)}</dd><dt>${TOY.J>0?'Energy with all spins along the field':'Energy of the checkerboard (best for small H)'}</dt><dd>${(-40-Math.abs(TOY.H)*(TOY.J>0?25:1)).toFixed(1)}</dd>`;
+  $('toyRead').innerHTML=`<dt>${tr('Up spins / down spins','위 스핀 / 아래 스핀')}</dt><dd>${up} / ${25-up}</dd><dt>${tr('Total magnetization M = Σ s<sub>i</sub>','전체 자화 M = Σ s<sub>i</sub>')}</dt><dd>${M}</dd><dt>${tr('Parallel / antiparallel pairs','평행 / 반평행 쌍')}</dt><dd>${sat} / ${uns}</dd><dt>E<sub>int</sub> = −J Σ s<sub>i</sub>s<sub>j</sub></dt><dd>${Eint.toFixed(1)}</dd><dt>E<sub>ext</sub> = −H Σ s<sub>i</sub></dt><dd>${Eext.toFixed(1)}</dd><dt>${tr('Total energy E','전체 에너지 E')}</dt><dd>${(Eint+Eext).toFixed(1)}</dd><dt>${TOY.J>0?tr('Energy with all spins along the field','모든 스핀이 자기장을 따를 때의 에너지'):tr('Energy of the checkerboard (best for small H)','바둑판 배치의 에너지 (작은 H에서 최선)')}</dt><dd>${(-40-Math.abs(TOY.H)*(TOY.J>0?25:1)).toFixed(1)}</dd>`;
 }
 
 /* ---------- exact enumeration ---------- */
@@ -618,9 +636,9 @@ function runEnum(L){
   if (ENUM[L]){ drawEnum(); return; }
   const it=enumerate(L); enumJob=it;
   const step=()=>{ if (enumJob!==it) return; const t0=performance.now(); let r;
-    while (performance.now()-t0<25){ r=it.next(); if (r.done) break; $('xStat').textContent=`Enumerating ${L} × ${L}: ${(100*r.value).toFixed(0)}%`; }
-    if (r && r.done){ $('xStat').textContent=`${L} × ${L}: all ${Math.pow(2,L*L).toLocaleString('en-US')} microstates summed exactly.`; drawEnum(); } else setTimeout(step,0); };
-  $('xStat').textContent=`Enumerating ${L} × ${L}…`; setTimeout(step,0);
+    while (performance.now()-t0<25){ r=it.next(); if (r.done) break; $('xStat').textContent=tr(`Enumerating ${L} × ${L}: ${(100*r.value).toFixed(0)}%`,`${L} × ${L} 나열 중: ${(100*r.value).toFixed(0)}%`); }
+    if (r && r.done){ $('xStat').textContent=tr(`${L} × ${L}: all ${Math.pow(2,L*L).toLocaleString('en-US')} microstates summed exactly.`,`${L} × ${L}: 미시상태 ${Math.pow(2,L*L).toLocaleString('en-US')}개를 모두 정확히 더했습니다.`); drawEnum(); } else setTimeout(step,0); };
+  $('xStat').textContent=tr(`Enumerating ${L} × ${L}…`,`${L} × ${L} 나열 중…`); setTimeout(step,0);
 }
 const TGRID=Array.from({length:240},(_,i)=>0.15+i*(6-0.15)/239);
 function drawEnum(){
@@ -632,11 +650,11 @@ function drawEnum(){
   const sub=(arr)=>arr.filter((_,i)=>i%6===0);
   plot($('x2'),{x:[0,6],zeroY:true,series:[{color:C.accent,width:2,pts:rows.map(r=>[r.T,r.chiD])},{dots:true,r:3.5,color:C.crit,pts:sub(rows).map(r=>[r.T,r.a.chiF])}],vlines:vl,xlabel:'T',ylabel:'χ'});
   plot($('x3'),{x:[0,6],zeroY:true,series:[{color:C.accent,width:2,pts:rows.map(r=>[r.T,r.cD])},{dots:true,r:3.5,color:C.crit,pts:sub(rows).map(r=>[r.T,r.a.cF])}],vlines:vl,xlabel:'T',ylabel:'c'});
-  plot($('x4'),{x:[0,6],series:[{color:C.accent,width:2,pts:rows.map(r=>[r.T,r.a.f])},{color:C.ink,width:1.6,pts:rows.map(r=>[r.T,r.a.eps])},{color:C.crit,width:1.8,pts:rows.map(r=>[r.T,r.a.S])},{color:C.crit,dash:[2,4],width:1,pts:[[0,Math.LN2],[6,Math.LN2]]}],vlines:vl,xlabel:'T',ylabel:'f (blue), ε (dark), S/N (red)'});
+  plot($('x4'),{x:[0,6],series:[{color:C.accent,width:2,pts:rows.map(r=>[r.T,r.a.f])},{color:C.ink,width:1.6,pts:rows.map(r=>[r.T,r.a.eps])},{color:C.crit,width:1.8,pts:rows.map(r=>[r.T,r.a.S])},{color:C.crit,dash:[2,4],width:1,pts:[[0,Math.LN2],[6,Math.LN2]]}],vlines:vl,xlabel:'T',ylabel:tr('f (blue), ε (dark), S/N (red)','f (파랑), ε (진한 색), S/N (빨강)')});
   const HG=Array.from({length:161},(_,i)=>-2+i*4/160);
   plot($('x5'),{x:[-2,2],y:[-1.05,1.05],series:[{color:C.accent,width:2,pts:HG.map(h=>[h,thermo(L,Tf,h,J).m])},{color:C.ink,dash:[6,4],width:1.2,pts:HG.map(h=>[h,Math.tanh(h/Tf)])}],xlabel:'H',ylabel:'m'});
   const pm=pM(L,Tf,H,J);
-  plot($('x6'),{x:[-ENUM[L].N-1,ENUM[L].N+1],zeroY:true,series:[{color:C.accent,width:1.4,pts:pm},{dots:true,r:4,color:C.accent,pts:pm}],xlabel:'total magnetization M',ylabel:'P(M)'});
+  plot($('x6'),{x:[-ENUM[L].N-1,ENUM[L].N+1],zeroY:true,series:[{color:C.accent,width:1.4,pts:pm},{dots:true,r:4,color:C.accent,pts:pm}],xlabel:tr('total magnetization M','전체 자화 M'),ylabel:'P(M)'});
 }
 
 /* ---------- non-interacting spins ---------- */
@@ -649,14 +667,14 @@ function drawNon(){
   plot($('n1'),{x:[-3,3],y:[-1.05,1.05],series:Ts.map(([t,c])=>({color:c,width:t===0.02?2.2:1.6,pts:HG.map(h=>[h,Math.tanh(h/t)])})),xlabel:'H',ylabel:'m'});
   plot($('n2'),{x:[-3,3],y:[0,2.2],series:Ts.slice(1).map(([t,c])=>({color:c,width:1.6,pts:HG.map(h=>[h,sech(h/t)**2/t])})),xlabel:'H',ylabel:'χ'});
   const TG=Array.from({length:300},(_,i)=>0.005+i*Math.max(2,10*H)/299);
-  plot($('n3'),{x:[0,Math.max(2,10*H)],series:[{color:C.accent,width:2,pts:TG.map(t=>[t,-H*Math.tanh(H/t)])},{color:C.crit,width:2,pts:TG.map(t=>[t,(H/t)**2*sech(H/t)**2])}],xlabel:'T',ylabel:'ε (blue), c (red)'});
+  plot($('n3'),{x:[0,Math.max(2,10*H)],series:[{color:C.accent,width:2,pts:TG.map(t=>[t,-H*Math.tanh(H/t)])},{color:C.crit,width:2,pts:TG.map(t=>[t,(H/t)**2*sech(H/t)**2])}],xlabel:'T',ylabel:tr('ε (blue), c (red)','ε (파랑), c (빨강)')});
   /* ln q and ln(1 − q) for q = e^{βH}/(2 cosh βH), computed directly as −softplus(∓2βH): forming q first rounds it to 1
      for strong fields (T = 0.1, H = 2), and 0·ln 0 then gives NaN for every point. */
   const sp=x=>Math.max(x,0)+Math.log1p(Math.exp(-Math.abs(x))), lq=-sp(-2*H/T), lq1=-sp(2*H/T), ser=[], Ns=[[16,C.l16],[256,C.l64],[4096,C.accent]];
   Ns.forEach(([N,c])=>{ const pts=[]; for (let n=0;n<=N;n++){ const lp=lnBinom(N,n)+n*lq+(N-n)*lq1; const p=Math.exp(lp); if (p<1e-9 && N>16) continue; pts.push([2*n/N-1,p*N/2]); } ser.push({color:c,width:1.8,pts}); });
-  plot($('n4'),{x:[-1,1],zeroY:true,series:ser,vlines:[{x:Math.tanh(H/T),color:C.crit,dash:[4,4]}],xlabel:'m = M/N',ylabel:'probability density'});
+  plot($('n4'),{x:[-1,1],zeroY:true,series:ser,vlines:[{x:Math.tanh(H/T),color:C.crit,dash:[4,4]}],xlabel:'m = M/N',ylabel:tr('probability density','확률 밀도')});
   const rel=H>0?1/Math.sinh(H/T):Infinity;
-  $('n4t').innerHTML= H>0 ? `Relative fluctuation <span class="rad"><span class="rs">√</span><span class="rc">⟨M²⟩ − ⟨M⟩²</span></span>/⟨M⟩ = csch(βH)/<span class="rad"><span class="rs">√</span><span class="rc">N</span></span>: ${Ns.map(([N])=>`N = ${N}: <b>${(rel/Math.sqrt(N)).toFixed(3)}</b>`).join(', ')}.` : 'At H = 0, ⟨M⟩ = 0, so the relative fluctuation is undefined; the spread still shrinks as 1/<span class="rad"><span class="rs">√</span><span class="rc">N.</span></span>';
+  $('n4t').innerHTML= H>0 ? tr('Relative fluctuation','상대 요동')+` <span class="rad"><span class="rs">√</span><span class="rc">⟨M²⟩ − ⟨M⟩²</span></span>/⟨M⟩ = csch(βH)/<span class="rad"><span class="rs">√</span><span class="rc">N</span></span>: ${Ns.map(([N])=>`N = ${N}: <b>${(rel/Math.sqrt(N)).toFixed(3)}</b>`).join(', ')}.` : tr('At H = 0, ⟨M⟩ = 0, so the relative fluctuation is undefined; the spread still shrinks as 1/<span class="rad"><span class="rs">√</span><span class="rc">N.</span></span>','H = 0에서는 ⟨M⟩ = 0이므로 상대 요동이 정의되지 않습니다. 그래도 퍼짐은 1/<span class="rad"><span class="rs">√</span><span class="rc">N</span></span>처럼 줄어듭니다.');
 }
 
 /* ---------- temperature sweep with the Wolff algorithm ---------- */
@@ -668,15 +686,15 @@ let running=true, timer=null, lastRef=0;
 function pick(){ let b=null, br=1; sw.forEach(s=>{ const r=s.cnt/BASE; if (r<br){ br=r; b=s; } }); return b; }
 function work(){ timer=null; if (!running) return; const t0=performance.now(); let did=false;
   while (performance.now()-t0<9){ const st=pick(); if (!st) break; swStep(st); did=true; }
-  if (did){ if (performance.now()-lastRef>800){ drawSweep(); lastRef=performance.now(); } timer=setTimeout(work,0); } else { drawSweep(); running=false; $('run').textContent='Resume'; }
+  if (did){ if (performance.now()-lastRef>800){ drawSweep(); lastRef=performance.now(); } timer=setTimeout(work,0); } else { drawSweep(); running=false; $('run').textContent=tr('Resume','계속'); }
 }
-function start(){ if (!running){ running=true; $('run').textContent='Pause'; } if (!timer) timer=setTimeout(work,0); }
+function start(){ if (!running){ running=true; $('run').textContent=tr('Pause','일시 정지'); } if (!timer) timer=setTimeout(work,0); }
 const LCOL=L=>({16:C.l16,32:C.l64,64:C.accent})[L];
 const R={};
 function drawSweep(){
   let d=0; sw.forEach(s=>d+=Math.min(s.cnt,BASE)); $('prog').style.width=(100*d/(sw.length*BASE)).toFixed(1)+'%';
-  $('chips').innerHTML=SIZES.map(L=>{ const q=sw.filter(s=>s.L===L); return `<span class="chip"><i class="sw" style="background:${LCOL(L)}"></i>L = ${L} <span style="color:var(--muted)">${Math.min(...q.map(s=>s.cnt))}/${BASE} per T</span></span>`; }).join('');
-  $('stTxt').textContent= pick()?(running?'Sampling…':'Paused'):'Done';
+  $('chips').innerHTML=SIZES.map(L=>{ const q=sw.filter(s=>s.L===L); return `<span class="chip"><i class="sw" style="background:${LCOL(L)}"></i>L = ${L} <span style="color:var(--muted)">${Math.min(...q.map(s=>s.cnt))}/${BASE} ${tr('per T','(T당)')}</span></span>`; }).join('');
+  $('stTxt').textContent= pick()?(running?tr('Sampling…','표집 중…'):tr('Paused','일시 정지됨')):tr('Done','완료');
   const TG=Array.from({length:300},(_,i)=>0.5+i*1.8/299);
   const by=L=>sw.filter(s=>s.L===L&&s.cnt>0);
   const ser1=[{color:C.ink,dash:[6,4],width:1.3,pts:TG.map(r=>[r,m0(r*TC)])}], ser2=[], ser3=[{color:C.ink,dash:[6,4],width:1.3,noScale:true,pts:TG.filter(r=>Math.abs(r-1)>0.004).map(r=>[r,cOns(r*TC)])}], ser4=[{color:C.ink,dash:[6,4],width:1.3,pts:TG.map(r=>[r,uOns(r*TC)])}];
@@ -694,19 +712,19 @@ function drawSweep(){
   const ser5=[{dots:true,r:5,color:C.accent,pts:pm},{dots:true,r:5,color:C.crit,pts:px}];
   if (fm) ser5.push({color:C.accent,dash:[6,4],width:1.2,pts:[12,90].map(L=>[L,Math.exp(fm.icpt+fm.slope*Math.log(L))])});
   if (fx) ser5.push({color:C.crit,dash:[6,4],width:1.2,pts:[12,90].map(L=>[L,Math.exp(fx.icpt+fx.slope*Math.log(L))])});
-  plot($('s5'),{x:[12,90],logx:true,logy:true,xticks:[16,32,64],series:ser5,xlabel:'L',ylabel:'⟨|m|⟩ and χ at T_c'});
+  plot($('s5'),{x:[12,90],logx:true,logy:true,xticks:[16,32,64],series:ser5,xlabel:'L',ylabel:tr('⟨|m|⟩ and χ at T_c','T_c에서 ⟨|m|⟩와 χ')});
   R.bn=fm?-fm.slope:NaN; R.gn=fx?fx.slope:NaN;
-  $('s5t').innerHTML=(fm?`β/ν ≈ <b>${R.bn.toFixed(3)}</b> <span style="color:var(--muted)">exact 1/8</span>`:'')+(fx?`, γ/ν ≈ <b>${R.gn.toFixed(3)}</b> <span style="color:var(--muted)">exact 7/4</span>`:'');
-  const rows=[['α','c ∝ |T − T<sub>c</sub>|<sup>−α</sup>','0 (logarithmic)','0 (jump)','−2/3','–'],['β','m<sub>0</sub> ∝ (T<sub>c</sub> − T)<sup>β</sup>','1/8','1/2','5/36','–'],['γ','χ ∝ |T − T<sub>c</sub>|<sup>−γ</sup>','7/4','1','43/18','–'],['δ','m(T<sub>c</sub>, H) ∝ |H|<sup>1/δ</sup>','15','3','91/5','–'],['ν','ξ ∝ |T − T<sub>c</sub>|<sup>−ν</sup>','1','1/2','4/3','–'],['η','g(r) ∝ r<sup>−(d−2+η)</sup> at T<sub>c</sub>','1/4','0','5/24','–'],['β/ν','⟨|m|⟩ ∝ L<sup>−β/ν</sup> at T<sub>c</sub>','1/8','–','5/48',f3(R.bn)],['γ/ν','χ ∝ L<sup>γ/ν</sup> at T<sub>c</sub>','7/4','–','43/24',f3(R.gn)]];
+  $('s5t').innerHTML=(fm?`β/ν ≈ <b>${R.bn.toFixed(3)}</b> <span style="color:var(--muted)">${tr('exact','정확한 값')} 1/8</span>`:'')+(fx?`, γ/ν ≈ <b>${R.gn.toFixed(3)}</b> <span style="color:var(--muted)">${tr('exact','정확한 값')} 7/4</span>`:'');
+  const rows=[['α','c ∝ |T − T<sub>c</sub>|<sup>−α</sup>',tr('0 (logarithmic)','0 (로그)'),tr('0 (jump)','0 (불연속)'),'−2/3','–'],['β','m<sub>0</sub> ∝ (T<sub>c</sub> − T)<sup>β</sup>','1/8','1/2','5/36','–'],['γ','χ ∝ |T − T<sub>c</sub>|<sup>−γ</sup>','7/4','1','43/18','–'],['δ','m(T<sub>c</sub>, H) ∝ |H|<sup>1/δ</sup>','15','3','91/5','–'],['ν','ξ ∝ |T − T<sub>c</sub>|<sup>−ν</sup>','1','1/2','4/3','–'],['η',tr('g(r) ∝ r<sup>−(d−2+η)</sup> at T<sub>c</sub>','T<sub>c</sub>에서 g(r) ∝ r<sup>−(d−2+η)</sup>'),'1/4','0','5/24','–'],['β/ν',tr('⟨|m|⟩ ∝ L<sup>−β/ν</sup> at T<sub>c</sub>','T<sub>c</sub>에서 ⟨|m|⟩ ∝ L<sup>−β/ν</sup>'),'1/8','–','5/48',f3(R.bn)],['γ/ν',tr('χ ∝ L<sup>γ/ν</sup> at T<sub>c</sub>','T<sub>c</sub>에서 χ ∝ L<sup>γ/ν</sup>'),'7/4','–','43/24',f3(R.gn)]];
   $('expBody').innerHTML=rows.map(r=>`<tr><td><b>${r[0]}</b></td><td>${r[1]}</td><td class="num">${r[2]}</td><td class="num">${r[3]}</td><td class="num">${r[4]}</td><td class="num">${r[5]}</td></tr>`).join('');
 }
 
 /* ---------- symmetry breaking table ---------- */
 function drawRatio(){
-  const H=+$('bH').value, tr=+$('bT').value, T=tr*TC, m=m0(T); $('bHo').textContent=H.toFixed(4); $('bTo').textContent=tr.toFixed(2);
+  const H=+$('bH').value, tq=+$('bT').value, T=tq*TC, m=m0(T); $('bHo').textContent=H.toFixed(4); $('bTo').textContent=tq.toFixed(2);
   const Ns=[16,256,4096,65536,1048576,16777216];
   const fmt=x=>{ const l10=x/Math.LN10; if (l10<6) return Math.exp(x).toPrecision(4); return '10<sup>'+Math.round(l10)+'</sup>'; };
-  $('ratioTable').innerHTML=`<thead><tr><th style="text-align:right">N</th><th style="text-align:right">M = m<sub>0</sub>N with m<sub>0</sub> = ${m.toFixed(3)}</th><th style="text-align:right">P<sub>{s<sub>i</sub>}</sub>/P<sub>{−s<sub>i</sub>}</sub> = exp(2HM/k<sub>B</sub>T)</th></tr></thead><tbody>`+
+  $('ratioTable').innerHTML=`<thead><tr><th style="text-align:right">N</th><th style="text-align:right">M = m<sub>0</sub>N${tr(' with ',', ')}m<sub>0</sub> = ${m.toFixed(3)}</th><th style="text-align:right">P<sub>{s<sub>i</sub>}</sub>/P<sub>{−s<sub>i</sub>}</sub> = exp(2HM/k<sub>B</sub>T)</th></tr></thead><tbody>`+
     Ns.map(N=>`<tr><td class="num">${N.toLocaleString('en-US')}</td><td class="num">${Math.round(m*N).toLocaleString('en-US')}</td><td class="num">${fmt(2*H*m*N/T)}</td></tr>`).join('')+'</tbody>';
 }
 
@@ -740,12 +758,13 @@ let xr=0; ['xH','xT'].forEach(id=>$(id).addEventListener('input',()=>{ if (!xr) 
 ['nT','nH'].forEach(id=>$(id).addEventListener('input',drawNon));
 ['bH','bT'].forEach(id=>$(id).addEventListener('input',drawRatio));
 $('demoSmall').onclick=()=>{ LV.L=8; $('lSel').value='8'; LV.alg='metro'; $('aSel').value='metro'; LV.H=0; $('hSl').value=0; LV.spf=16; $('spf').value='16'; liveReset('up'); setTr(0.95); window.scrollTo({top:0,behavior:'smooth'}); };
-$('run').onclick=()=>{ if (running){ running=false; $('run').textContent='Resume'; $('stTxt').textContent=pick()?'Paused':'Done'; } else { start(); $('stTxt').textContent=pick()?'Sampling…':'Done'; } };
+$('run').onclick=()=>{ if (running){ running=false; $('run').textContent=tr('Resume','계속'); $('stTxt').textContent=pick()?tr('Paused','일시 정지됨'):tr('Done','완료'); } else { start(); $('stTxt').textContent=pick()?tr('Sampling…','표집 중…'):tr('Done','완료'); } };
 $('more').onclick=()=>{ BASE*=2; start(); };
 let rz=0;
 const ro=new ResizeObserver(()=>{ if (rz) return; rz=requestAnimationFrame(()=>{ rz=0; renderSpins(); liveCharts(); toyDraw(); drawEnum(); drawNon(); drawSweep(); }); });
 document.querySelectorAll('figure, .plate, #toy').forEach(el=>ro.observe(el));
 matchMedia('(prefers-color-scheme: dark)').addEventListener('change',()=>{ readColors(); renderSpins(); toyDraw(); drawEnum(); drawNon(); drawSweep(); });
+window.addEventListener('langchange',()=>{ $('runB').textContent=LV.running?tr('Pause','일시 정지'):tr('Run','실행'); $('run').textContent=running?tr('Pause','일시 정지'):tr('Resume','계속'); $('stTxt').textContent=pick()?(running?tr('Sampling…','표집 중…'):tr('Paused','일시 정지됨')):tr('Done','완료'); liveRead(); renderSpins(); liveCharts(); toyDraw(); drawEnum(); drawNon(); drawSweep(); drawRatio(); });
 new MutationObserver(()=>{ readColors(); renderSpins(); toyDraw(); drawEnum(); drawNon(); drawSweep(); }).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
 
 readColors(); liveReset('random'); setTr(1); toyDraw(); drawNon(); drawRatio(); makeSweep(); drawSweep(); runEnum(4);
@@ -760,13 +779,164 @@ setTimeout(start,500);
   const SUN = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.5"/><path d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M4.9 19.1l1.8-1.8M17.3 6.7l1.8-1.8"/></svg>';
   const MOON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.5 14.5A8.5 8.5 0 0 1 9.5 3.5a8.5 8.5 0 1 0 11 11z"/></svg>';
   const current = () => root.dataset.theme || (mq.matches ? "dark" : "light");
-  const sync = () => { const dark = current() === "dark", label = dark ? "Switch to light mode" : "Switch to dark mode";
+  const sync = () => { const dark = current() === "dark", label = dark ? tr("Switch to light mode","밝은 화면으로 전환") : tr("Switch to dark mode","어두운 화면으로 전환");
     btn.innerHTML = dark ? SUN : MOON; btn.setAttribute("aria-label", label); btn.title = label; };
   btn.addEventListener("click", () => { const next = current() === "dark" ? "light" : "dark"; root.dataset.theme = next;
     try { localStorage.setItem("netsci-theme", next); } catch (e) {} sync(); });
   mq.addEventListener("change", sync);
+  window.addEventListener("langchange", sync);
   sync();
 })();
 </script>
+<!-- lang-toggle:body -->
+<script>
+window.I18N_KO={
+"k4": "외부 자기장 H",
+"k5": "격자",
+"k6": "갱신 규칙",
+"k7": "메트로폴리스 (단일 스핀)",
+"k8": "울프 (클러스터, H = 0에서만)",
+"k9": "속도",
+"k10": "느리게: 초당 약 6 스윕",
+"k11": "보통: 초당 약 15 스윕",
+"k12": "프레임당 1 스윕 (초당 약 60)",
+"k13": "프레임당 4 스윕",
+"k14": "프레임당 16 스윕",
+"k15": "무작위 시작 (T = ∞)",
+"k16": "모두 위로",
+"k17": "모두 아래로",
+"k18": "온도 T (단위 J/k<sub>B<\/sub>)",
+"k19": "스핀당 자화 m",
+"k20": "|m|의 시간 평균",
+"k21": "무한 격자에 대한 온사거의 m<sub>0<\/sub>(T)",
+"k22": "스핀당 에너지 ε",
+"k23": "마지막 변경 후 스윕 수",
+"k24": "<b>시간에 따른 스핀당 자화<\/b>T<sub>c<\/sub> 아래에서 작은 격자는 가끔 +m과 −m 사이를 뒤집히지만 (점선: 온사거의 ±m<sub>0<\/sub>), 큰 격자는 그대로 머뭅니다.",
+"k25": "<b>시간에 따른 m의 분포<\/b>T<sub>c<\/sub> 위에서는 m = 0에 봉우리 하나, 아래에서는 ±m<sub>0<\/sub>에 봉우리 둘, T<sub>c<\/sub>에서는 넓게 퍼진 분포입니다.",
+"k26": "<b>이 격자의 스핀–스핀 상관 함수 g(r)<\/b>g(r) = ⟨s<sub>i<\/sub>s<sub>i+r<\/sub>⟩ − ⟨|m|⟩², 두 축 방향으로 시간 평균한 값. 로그–로그. 점선: T<sub>c<\/sub>에서의 감쇠인 r<sup>−(d−2+η)<\/sup> = r<sup>−1/4<\/sup>.",
+"k35": "외부 자기장 H",
+"k36": "모두 위로",
+"k61": "물리량",
+"k84": "지수",
+"k87": "평균장",
+"k90": "표본 더 추가",
+"k105": "참고문헌",
+"k106": "<b>핵심 참고문헌.<\/b> K. Christensen and N. R. Moloney, <i>Complexity and Criticality<\/i>, Imperial College Press, London (2005), Chapter 2.",
+"k116": "이상훈 교수의 강의 노트를 바탕으로 Claude Opus 5.5가 만들었습니다.",
+"__title": "이징(Ising) 모형",
+"k1": "이징(Ising) 모형",
+"k2": "격자 위의 스핀은 위나 아래를 가리키고, 이웃끼리는 정렬하기를 좋아합니다. 그것이 전부인데도, 임계 온도 T<sub>c<\/sub> 아래에서는 외부 자기장 없이도 자화가 저절로 나타납니다. 모형을 직접 살펴보고, 작은 격자에서 열역학량을 정확히 계산하고, 상호작용 없는 스핀과 비교하고, 임계점 근처의 관심 있는 물리량을 측정해 보세요.",
+"k3": "이상훈 교수의 2장 (1부) 강의 노트를 바탕으로 하며, K. Christensen and N. R. Moloney, <i>Complexity and Criticality<\/i> (2005)를 따릅니다. 단위: k<sub>B<\/sub> = 1, J = 1이므로 온도와 자기장의 단위는 J입니다. <a href=\"#references\" style=\"color:var(--accent)\">참고문헌<\/a>",
+"k27": "이징 모형의 정의",
+"k28": "격자의 모든 자리 i에는 스핀 s<sub>i<\/sub> = +1 또는 −1이 있는데, 한 축을 따라서만 가리킬 수 있는 자기 쌍극자와 같습니다. 이웃한 스핀 한 쌍의 에너지는 평행이면 −J, 반평행이면 +J이고, 균일한 외부 자기장 H는 그 방향의 스핀마다 −H를, 반대 방향의 스핀마다 +H를 더합니다:",
+"k30": "첫 번째 합은 서로 다른 최근접 쌍에 대해 더합니다. J &gt; 0이면 평행한 스핀이 유리하여 강자성체이고, J &lt; 0이면 반평행한 스핀이 유리하여 반강자성체입니다. 아래의 스핀을 클릭해 뒤집어 보세요. 이 5 × 5 격자만 해도 미시상태가 2<sup>25<\/sup> = 33 554 432개인데, “위 14개, 아래 11개” 같은 거시상태는 그중 많은 것을 하나로 묶습니다.",
+"k31": "자유 경계, 최근접 쌍 40개. 파란 결합은 에너지를 낮추고 빨간 결합은 높입니다: J &gt; 0이면 파랑이 평행한 스핀을, J &lt; 0이면 반평행한 스핀을 잇습니다.",
+"k32": "결합 상수",
+"k33": "<span>J = +1, 강자성체<\/span>",
+"k34": "<span>J = −1, 반강자성체<\/span>",
+"k37": "무작위",
+"k38": "바둑판",
+"k39": "배치",
+"k40": "상호작용 에너지 −J s<sub>i<\/sub>s<sub>j<\/sub>",
+"k41": "관심사는 온도가 변할 때 모형이 어떻게 행동하는가입니다. k<sub>B<\/sub>T ≪ J이면 상호작용이 지배하여 스핀이 정렬해 에너지를 낮추고, k<sub>B<\/sub>T ≫ J이면 스핀이 사실상 독립적이 되어 무작위로 위아래를 가리키며 엔트로피를 최대로 합니다. 그 사이에서 고온의 무질서(상자성) 상이 저온의 질서(강자성) 상으로 바뀝니다. 맨 위의 온도 버튼을 눌러 보세요: 격자는 4T<sub>c<\/sub>에서 무작위로 보이고, 내려갈수록 자구가 점점 커지며, T<sub>c<\/sub>에서는 물방울 안에 물방울이 있는 프랙털이 되고, 0.7T<sub>c<\/sub>에서는 거의 완전히 정렬됩니다.",
+"k42": "정확한 나열에 의한 통계역학",
+"k43": "바른틀 앙상블에서 온도 T의 열저장체와 접촉한 계는 확률 P = e<sup>−βE<\/sup>/Z, β = 1/k<sub>B<\/sub>T로 미시상태 {s<sub>i<\/sub>}에 있습니다. 모든 관측량은 앙상블 평균이고, 모든 것은 분배함수와 자유 에너지에서 나옵니다:",
+"k45": "스핀당: m = −(∂f/∂H)<sub>T<\/sub>, ε = −(1/N)(∂ ln Z/∂β)<sub>H<\/sub>, S/N = (ε − f)/T이고, 응답 함수는 2계 도함수 χ = (∂m/∂H)<sub>T<\/sub>, c = (∂ε/∂T)<sub>H<\/sub>입니다. Z를 한 번 더 미분하면 요동–소산 관계 k<sub>B<\/sub>Tχ = (⟨M²⟩ − ⟨M⟩²)/N, k<sub>B<\/sub>T²c = (⟨E²⟩ − ⟨E⟩²)/N을 얻습니다: 작은 자극에 대한 응답은 자발적인 요동의 크기와 같습니다. 작은 주기 격자에 대해 이 페이지는 모든 미시상태를 정확히 더하고 두 관계를 확인합니다.",
+"k46": "주기 격자",
+"k47": "3 × 3 (상태 512개)",
+"k48": "4 × 4 (상태 65 536개)",
+"k49": "5 × 5 (상태 33 554 432개)",
+"k50": "상호작용",
+"k51": "<span>이징, J = 1<\/span>",
+"k52": "<span>상호작용 없음, J = 0<\/span>",
+"k53": "T에 대한 곡선의 자기장 H",
+"k54": "H에 대한 곡선의 온도 T",
+"k55": "<b>고른 H에서의 자화 m(T)<\/b>파랑: ⟨m⟩. 연한 색: ⟨|m|⟩. 점선: 상호작용 없는 스핀, tanh(H/T). 이 유한한 격자에 대해 정확하므로 어디서나 매끄럽습니다.",
+"k56": "<b>감수율 χ(T): 응답은 요동과 같다<\/b>선: 수치 미분으로 구한 χ = ∂m/∂H. 점: (⟨M²⟩ − ⟨M⟩²)/(N k<sub>B<\/sub>T).",
+"k57": "<b>비열 c(T): 응답은 요동과 같다<\/b>선: c = ∂ε/∂T. 점: (⟨E²⟩ − ⟨E⟩²)/(N k<sub>B<\/sub>T²).",
+"k58": "<b>스핀당 자유 에너지, 에너지, 엔트로피<\/b>f = −T ln Z/N, ε, 그리고 S/N = (ε − f)/T로, 스핀이 무작위가 되면 ln 2 (점선)까지 올라갑니다.",
+"k59": "<b>고른 T에서의 자화 m(H)<\/b>파랑: 이 격자. 점선: tanh(H/T). 상호작용이 응답을 더 가파르게 만듭니다.",
+"k60": "<b>각 전체 자화 M의 확률<\/b>고른 T와 H에서. H = 0에서는 언제나 대칭이므로 정확히 ⟨M⟩ = 0입니다. 작은 자기장이 한쪽으로 기울게 합니다.",
+"k62": "관계",
+"k63": "응답 함수",
+"k64": "<b>분배함수<\/b>",
+"k65": "<b>스핀당 자유 에너지<\/b>",
+"k67": "<b>스핀당 자화<\/b>",
+"k68": "<b>스핀당 에너지<\/b>",
+"k70": "<b>스핀당 엔트로피<\/b>",
+"k71": "항이 2<sup>N<\/sup>개이므로 Z는 해석 함수의 유한한 합이고, 따라서 f는 해석적이어서 특이할 수 없습니다: 유한한 계에는 상전이가 없습니다. 경계 효과가 사라지고 f → F<sub>bulk<\/sub>/N이 되는 열역학적 극한 N → ∞에서만 f의 도함수가 불연속이 되거나 발산할 수 있습니다.",
+"k72": "상호작용 없는 스핀",
+"k73": "J = 0이면 분배함수가 똑같은 N개의 항으로 인수분해되고, 모든 것이 정확합니다:",
+"k75": "비 H/k<sub>B<\/sub>T만 중요합니다. 이 비가 작으면 엔트로피가 이겨 스핀이 무작위로 가리키고, 크면 에너지가 이겨 모든 스핀이 자기장을 따릅니다. f는 모든 T와 H에서 해석적이고, H = 0에서는 모든 T &gt; 0에서 자화가 0입니다: 상전이는 상호작용이 필요한 협동 현상이므로, 자발 자화도 상전이도 없습니다. 에너지는 ε = −H tanh(βH), 비열은 c = (H/k<sub>B<\/sub>T)² sech²(βH)로, 쇼트키 봉우리입니다.",
+"k76": "분포의 온도 T",
+"k77": "분포와 T 곡선의 자기장 H",
+"k78": "<b>m(H) = tanh(H/T)<\/b>T = 0.02 (파랑), 0.5 (초록), 1 (주황), 2 (분홍). T → 0이면 계단이 됩니다: H → 0<sup>±<\/sup>에서 m = ±1.",
+"k79": "<b>χ(H) = β sech²(βH)<\/b>T = 0.5 (초록), 1 (주황), 2 (분홍). H = 0에서 χ = 1/T로, T → 0에서만 발산합니다.",
+"k80": "<b>고른 H에서의 에너지 ε(T)와 비열 c(T)<\/b>ε = −H tanh(H/T) (파랑)와 c = (H/T)² sech²(H/T) (빨강).",
+"k81": "<b>N = 16 (주황), 256 (초록), 4 096 (파랑)에 대한 m = M/N의 분포<\/b>고른 T와 H에서. N이 커질수록 tanh(βH) 둘레로 좁아집니다: 상대 요동은 1/<span class=\"rad\"><span class=\"rs\">√<\/span><span class=\"rc\">N<\/span><\/span>처럼 줄어듭니다.",
+"k82": "T<sub>c<\/sub> 근처의 관심 있는 물리량",
+"k83": "H = 0의 상호작용하는 모형으로 돌아갑시다. 정사각 격자에서 온사거의 정확한 풀이는 상전이를 k<sub>B<\/sub>T<sub>c<\/sub>/J = 2/ln(1 + <span class=\"rad\"><span class=\"rs\">√<\/span><span class=\"rc\">2<\/span><\/span>) ≈ 2.269에 둡니다. 이 페이지는 16 × 16, 32 × 32, 64 × 64 격자를 T<sub>c<\/sub>를 가로지르는 온도에서 울프 클러스터 알고리즘으로 시뮬레이션하고(측정 시간이 상태에 의존하지 않도록, 각 측정은 평형화 동안 보정한 ≈ N/⟨C⟩의 일정한 횟수의 클러스터 갱신 뒤에 이루어집니다), 정확한 무한 격자 결과와 비교합니다. 퍼콜레이션에서처럼 특이 거동은 거듭제곱 법칙으로 기술됩니다:",
+"k85": "정의",
+"k86": "2차원 이징 (정확한 값)",
+"k88": "2차원 퍼콜레이션",
+"k89": "이번 실행",
+"k91": "<b>자발 자화 m<sub>0<\/sub>(T)<\/b>점: 각 L에 대한 ⟨|m|⟩. 점선: 온사거, m<sub>0<\/sub> = [1 − sinh<sup>−4<\/sup>(2J/k<sub>B<\/sub>T)]<sup>1/8<\/sup>로, β = 1/8로 올라가며 T<sub>c<\/sub>에서 수직 접선을 가집니다.",
+"k92": "<b>감수율 χ(T)<\/b>요동으로부터 χ = N(⟨m²⟩ − ⟨|m|⟩²)/k<sub>B<\/sub>T. 봉우리는 L<sup>γ/ν<\/sup> = L<sup>7/4<\/sup>처럼 커집니다.",
+"k93": "<b>비열 c(T)<\/b>에너지 요동으로부터. 점선: 무한 격자에 대한 온사거의 정확한 c로, 로그로 발산합니다(α = 0).",
+"k94": "<b>스핀당 에너지 ε(T)<\/b>점선: 온사거의 정확한 결과. T<sub>c<\/sub>에서 연속이지만 기울기가 무한대입니다.",
+"k95": "<b>T<sub>c<\/sub>에서의 유한 크기 스케일링<\/b>유한한 격자의 퍼콜레이션에서처럼 ⟨|m|⟩ ∝ L<sup>−β/ν<\/sup> (파랑), N⟨m²⟩/k<sub>B<\/sub>T<sub>c<\/sub> ∝ L<sup>γ/ν<\/sup> (빨강). T<sub>c<\/sub>에서는 작은 격자에서 ⟨|m|⟩²을 빼면 신호의 일부가 사라지므로 ⟨m²⟩ 전체를 씁니다.",
+"k96": "상관 길이 ξ는 정렬된 스핀의 가장 큰 클러스터의 전형적인 크기, 또는 같은 말로 T<sub>c<\/sub> 아래에서는 완전 정렬 상태로부터, 위에서는 무작위 상태로부터의 가장 큰 요동의 규모입니다. ξ ∝ |T − T<sub>c<\/sub>|<sup>−ν<\/sup>로 발산하며, 스핀–스핀 상관 함수 g(r<sub>i<\/sub>, r<sub>j<\/sub>) = ⟨s<sub>i<\/sub>s<sub>j<\/sub>⟩ − ⟨s<sub>i<\/sub>⟩⟨s<sub>j<\/sub>⟩로 정의됩니다. g를 모든 자리에 대해 더하면 k<sub>B<\/sub>Tχ가 되므로, χ가 발산한다는 것은 T<sub>c<\/sub>에서 g가 지수적으로 감쇠할 수 없다는 뜻입니다. g는 r<sup>−(d−2+η)<\/sup>처럼 감쇠합니다. 실시간 격자 아래의 상관 그래프가 T<sub>c<\/sub>에서 돌 때 이를 보여 줍니다.",
+"k97": "대칭 깨짐",
+"k98": "H = 0에서는 모든 스핀을 뒤집어도 에너지가 변하지 않으므로, 미시상태 {s<sub>i<\/sub>}와 {−s<sub>i<\/sub>}는 확률이 같고 그 자화는 상쇄됩니다: 모든 온도에서 정확히 ⟨M⟩ = 0입니다. 작은 자기장은 두 확률의 비를 다음과 같이 바꿉니다.",
+"k99": "P<sub>{s<sub>i<\/sub>}<\/sub> / P<sub>{−s<sub>i<\/sub>}<\/sub> = exp(2βHM<sub>{s<sub>i<\/sub>}<\/sub>),  M ∝ N",
+"k100": "N을 고정하고 H → 0을 먼저 취하면 비가 1로 돌아가 ⟨M⟩ = 0입니다. N → ∞을 먼저 취하면 비가 H → 0<sup>+<\/sup>에서 무한대, H → 0<sup>−<\/sup>에서 0이 됩니다: 배치 공간의 절반에 접근할 수 없게 됩니다. 이것이 에르고딕성 깨짐이며, 0이 아닌 자화가 살아남게 하는 것입니다. 그래서 시뮬레이션에서는 보통 |m|을 기록합니다.",
+"k101": "자기장 H",
+"k102": "온도 T/T<sub>c<\/sub> (T<sub>c<\/sub> 아래)",
+"k103": "8 × 8 격자가 뒤집히는 것 보기",
+"k104": "데모 버튼은 맨 위의 실시간 격자를 8 × 8, T = 0.95T<sub>c<\/sub>, H = 0, 프레임당 16 스윕의 메트로폴리스 갱신으로 설정합니다: 자화가 수백 스윕마다 +m과 −m 사이를 뛰고, m의 분포가 두 봉우리를 모두 채웁니다. 16 × 16에서는 뛰는 일이 벌써 약 10배 드뭅니다. 128 × 128 격자는 사실상 절대 뛰지 않으며, 작은 자기장이 조금만 있어도 한쪽이 정해집니다.",
+"k115": "시뮬레이션은 주기 경계 조건의 정사각 격자에서 메트로폴리스 단일 스핀 갱신과 울프 클러스터 갱신을 씁니다. 작은 격자의 정확한 결과는 그레이 코드로 모든 미시상태를 나열합니다.",
+"k29": "E<sub>{s<sub>i<\/sub>}<\/sub> = −J Σ<sub>⟨ij⟩<\/sub> s<sub>i<\/sub>s<sub>j<\/sub> − H Σ<sub>i<\/sub> s<sub>i<\/sub>",
+"k44": "Z(T, H) = Σ<sub>{s<sub>i<\/sub>}<\/sub> e<sup>−βE<sub>{s<sub>i<\/sub>}<\/sub><\/sup>,  F = ⟨E⟩ − TS = −k<sub>B<\/sub>T ln Z",
+"k66": "f = −(1/N) k<sub>B<\/sub>T ln Z",
+"k69": "ε = −(1/N)(∂ ln Z/∂β)<sub>H<\/sub> = f − T(∂f/∂T)<sub>H<\/sub>",
+"k74": "Z = [2 cosh(βH)]<sup>N<\/sup>,  f = −k<sub>B<\/sub>T ln[2 cosh(H/k<sub>B<\/sub>T)],  m = tanh(H/k<sub>B<\/sub>T),  χ = β sech²(βH)",
+"k107": "E. Ising, “Beitrag zur Theorie des Ferromagnetismus,” <i>Z. Phys.<\/i> <b>31<\/b>, 253 (1925).",
+"k108": "S. G. Brush, “History of the Lenz–Ising model,” <i>Rev. Mod. Phys.<\/i> <b>39<\/b>, 883 (1967).",
+"k109": "L. Onsager, “Crystal statistics. I. A two-dimensional model with an order-disorder transition,” <i>Phys. Rev.<\/i> <b>65<\/b>, 117 (1944).",
+"k110": "C. N. Yang, “The spontaneous magnetization of a two-dimensional Ising model,” <i>Phys. Rev.<\/i> <b>85<\/b>, 808 (1952).",
+"k111": "N. Metropolis, A. W. Rosenbluth, M. N. Rosenbluth, A. H. Teller and E. Teller, “Equation of state calculations by fast computing machines,” <i>J. Chem. Phys.<\/i> <b>21<\/b>, 1087 (1953).",
+"k112": "U. Wolff, “Collective Monte Carlo updating for spin systems,” <i>Phys. Rev. Lett.<\/i> <b>62<\/b>, 361 (1989).",
+"k113": "D. V. Schroeder, <i>An Introduction to Thermal Physics<\/i>, Addison-Wesley (2000), Chapter 6.",
+"k114": "N. Goldenfeld, <i>Lectures on Phase Transitions and the Renormalization Group<\/i>, Addison-Wesley (1992)."
+};
+(function(){
+  // English / 한국어 switch shared by the course demos; the choice is remembered across pages
+  var KEY='lshlj82-demo-lang', root=document.documentElement, KO=window.I18N_KO||{}, EN={};
+  var els=[].slice.call(document.querySelectorAll('[data-k]'));
+  els.forEach(function(e){EN[e.getAttribute('data-k')]=e.innerHTML;});
+  var titleEN=document.title;
+  var btn=document.createElement('button');btn.id='langBtn';btn.type='button';document.body.appendChild(btn);
+  function typeset(list){
+    if(!list.length)return;
+    if(window.MathJax&&MathJax.typesetPromise){var go=function(){MathJax.typesetPromise(list).catch(function(){});};
+      if(MathJax.startup&&MathJax.startup.promise)MathJax.startup.promise.then(go);else go();}
+    if(window.renderMathInElement&&window.KATEX_OPTS)list.forEach(function(e){try{renderMathInElement(e,window.KATEX_OPTS)}catch(_){}}); 
+  }
+  function apply(l,first){
+    window.LANG=l;root.dataset.lang=l;root.lang=l;var changed=[];
+    els.forEach(function(e){var k=e.getAttribute('data-k'),s=(l==='ko'&&KO[k]!=null)?KO[k]:EN[k];if(e.innerHTML!==s){e.innerHTML=s;changed.push(e);}});
+    document.title=(l==='ko'&&KO.__title)?KO.__title:titleEN;
+    btn.textContent=l==='ko'?'EN':'한국어';btn.setAttribute('aria-label',l==='ko'?'View in English':'한국어로 보기');btn.title=btn.getAttribute('aria-label');
+    btn.setAttribute('lang',l==='ko'?'en':'ko');
+    if(!first)typeset(changed);
+    window.dispatchEvent(new CustomEvent('langchange',{detail:{lang:l}}));
+    // canvases drawn before the Korean web font arrives are redrawn once it has loaded
+    if(l==='ko'&&document.fonts&&!document.fonts.check('16px "IBM Plex Sans KR"','가'))document.fonts.load('16px "IBM Plex Sans KR"','가').then(function(){if(window.LANG==='ko')window.dispatchEvent(new CustomEvent('langchange',{detail:{lang:'ko'}}));}).catch(function(){});
+  }
+  btn.addEventListener('click',function(){var n=window.LANG==='ko'?'en':'ko';try{localStorage.setItem(KEY,n)}catch(e){}apply(n,false);});
+  apply(window.LANG||'en',true);
+})();
+</script>
+<!-- lang-toggle:body-end -->
 </body>
 </html>
